@@ -1,9 +1,9 @@
 import mongoose, { Schema } from "mongoose";
-import bcrypt from "bcryptjs";
 import { IUser } from "../types/user.types.js";
 
 const UserSchema: Schema = new Schema(
   {
+    _id: { type: String, required: true },
     email: {
       type: String,
       required: true,
@@ -11,29 +11,17 @@ const UserSchema: Schema = new Schema(
       lowercase: true,
       trim: true,
     },
-    passwordHash: { type: String, required: true },
+    name: { type: String, required: true },
+    emailVerified: { type: Boolean, required: true, default: false },
+    image: { type: String },
     firstName: { type: String },
     lastName: { type: String },
   },
-  { timestamps: true }
+  {
+    collection: "user",
+    timestamps: true,
+  }
 );
 
-// Hash password before saving
-UserSchema.pre<IUser>("save", async function () {
-  if (!this.isModified("passwordHash")) return;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-  } catch (error: any) {
-    throw error;
-  }
-});
-
-// Compare password method
-UserSchema.methods.comparePassword = async function (
-  password: string
-): Promise<boolean> {
-  return bcrypt.compare(password, this.passwordHash);
-};
-
 export default mongoose.model<IUser>("User", UserSchema);
+

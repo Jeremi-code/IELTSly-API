@@ -13,12 +13,20 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(morgan("dev"));
-app.use(express.json());
 
-// Routes
+// Routes - Mount auth routes BEFORE express.json() is applied globally
+// to prevent express.json() from consuming the body stream for Better Auth
 app.use("/api/auth", authRoutes);
+
+// Apply express.json() for all subsequent routes
+app.use(express.json());
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {

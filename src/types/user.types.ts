@@ -1,9 +1,15 @@
 import { Document } from "mongoose";
 
-export interface IUser extends Document {
+export interface IUser {
+  _id: string;
   email: string;
-  passwordHash: string;
+  name: string;
+  emailVerified: boolean;
+  image?: string;
   firstName?: string;
   lastName?: string;
-  comparePassword: (password: string) => Promise<boolean>;
+  passwordHash?: string;
+  comparePassword?: (password: string) => Promise<boolean>;
 }
+
+

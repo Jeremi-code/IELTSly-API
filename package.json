@@ -7,6 +7,7 @@
   "type": "module",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.11",
+    "@better-auth/mongo-adapter": "^1.6.14",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.4.13",
     "cors": "^2.8.5",

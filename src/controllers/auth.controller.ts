@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import { auth } from "../configs/auth.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
@@ -9,22 +9,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+    const result = await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name: `${firstName || ""} ${lastName || ""}`.trim() || email.split("@")[0],
+        firstName,
+        lastName,
+      },
+      headers: new Headers(req.headers as any),
+    });
+
+    if (!result) {
+      res.status(400).json({ message: "Registration failed" });
       return;
     }
 
-    const newUser = new User({
-      email,
-      passwordHash: password, // Will be hashed by pre-save hook
-      firstName,
-      lastName,
-    });
-
-    await newUser.save();
-
-    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, {
+    const token = jwt.sign({ id: result.user.id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN as any,
     });
 
@@ -32,14 +33,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       message: "User registered successfully",
       token,
       user: {
-        id: newUser._id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
       },
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -47,19 +48,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
+    const result = await auth.api.signInEmail({
+      body: {
+        email,
+        password,
+      },
+      headers: new Headers(req.headers as any),
+    });
+
+    if (!result) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
     }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      res.status(401).json({ message: "Invalid credentials" });
-      return;
-    }
-
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
+    const token = jwt.sign({ id: result.user.id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN as any,
     });
 
@@ -67,13 +69,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
       },
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    res.status(401).json({ message: "Invalid credentials" });
   }
 };
+
