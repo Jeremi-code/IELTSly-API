@@ -3,8 +3,9 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import { toNodeHandler } from "better-auth/node";
 import connectDB from "./configs/db.js";
-import authRoutes from "./routes/auth.routes.js";
+import { auth } from "./configs/auth.js";
 
 dotenv.config();
 
@@ -21,11 +22,12 @@ app.use(
 );
 app.use(morgan("dev"));
 
-// Routes - Mount auth routes BEFORE express.json() is applied globally
-// to prevent express.json() from consuming the body stream for Better Auth
-app.use("/api/auth", authRoutes);
+// Better Auth catch-all handler
+// Must be mounted BEFORE express.json() so it can parse its own request bodies.
+// Express v5 requires `*splat` syntax for wildcard routes.
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
-// Apply express.json() for all subsequent routes
+// Apply express.json() for all other application routes
 app.use(express.json());
 
 // Health check
