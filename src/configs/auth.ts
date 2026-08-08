@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 
@@ -10,9 +10,11 @@ const client = new MongoClient(mongoUri);
 const db = client.db();
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db, {
-    client,
-  }),
+  basePath: "/api/auth",
+  database: mongodbAdapter(db, { client }),
+  trustedOrigins: [
+    process.env.FRONTEND_URL || "http://localhost:3000",
+  ],
   emailAndPassword: {
     enabled: true,
   },
@@ -26,18 +28,10 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
     },
   },
-  user: {
-    additionalFields: {
-      firstName: {
-        type: "string",
-        required: false,
-        input: true,
-      },
-      lastName: {
-        type: "string",
-        required: false,
-        input: true,
-      },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
     },
   },
 });
