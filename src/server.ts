@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -6,6 +6,10 @@ import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import connectDB from "./configs/db.js";
 import { auth } from "./configs/auth.js";
+import essayRoutes from "./routes/essay.routes.js";
+import questionRoutes from "./routes/question.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
+import scrapeRoutes from "./routes/scrape.routes.js";
 
 dotenv.config();
 
@@ -35,10 +39,18 @@ app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "OK" });
 });
 
+// ── API Routes ──────────────────────────────────────────────────────
+app.use("/api/essays", essayRoutes);
+app.use("/api/questions", questionRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/scrape", scrapeRoutes);
+
 // Error handling middleware
-app.use((err: any, req: Request, res: Response, next: any) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ message: "Internal Server Error" });
+  res.status(err.statusCode || 500).json({
+    message: err.message || "Internal Server Error",
+  });
 });
 
 // Connect to Database and Start Server
