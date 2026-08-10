@@ -1,32 +1,11 @@
 import { generateObject, generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
-import { z } from "zod";
+import { evaluationOutputSchema, type EvaluationResult } from "../zod/evaluation.schema.js";
+import type { AICredentials, EvaluateInput } from "../types/ai.types.js";
+import type { AnalyticsStats, CriteriaAverages, DailyComment } from "../types/analytics.types.js";
 
-// ── Output schema for AI evaluation ─────────────────────────────────
-const evaluationOutputSchema = z.object({
-  overallBand: z.number().min(0).max(9),
-  criteria: z.object({
-    ta: z.number().min(0).max(9),
-    cc: z.number().min(0).max(9),
-    lr: z.number().min(0).max(9),
-    gra: z.number().min(0).max(9),
-  }),
-  feedback: z.string(),
-  tips: z.array(z.string()),
-});
-
-export type EvaluationResult = z.infer<typeof evaluationOutputSchema>;
-
-export type AIProvider = "gemini" | "openai";
-
-export interface AICredentials {
-  apiKey: string;
-  provider: AIProvider;
-  model?: string;
-}
-
-const DEFAULT_MODELS: Record<AIProvider, string> = {
+const DEFAULT_MODELS: Record<EvaluateInput["provider"], string> = {
   gemini: "gemini-3.5-flash",
   openai: "gpt-4o-mini",
 };
@@ -77,15 +56,6 @@ Provide 2–4 sentences of encouraging but specific feedback and 2–4 concrete,
 }
 
 // ── Main evaluation function ────────────────────────────────────────
-export interface EvaluateInput extends AICredentials {
-  response: string;
-  wordCount: number;
-  type: "task1" | "task2";
-  mode: "practice" | "exam";
-  questionText: string;
-  questionCategory?: string;
-}
-
 export async function evaluateEssay(
   input: EvaluateInput
 ): Promise<EvaluationResult> {
@@ -104,18 +74,10 @@ export async function evaluateEssay(
 
 // ── Daily comment generation ────────────────────────────────────────
 export async function generateDailyComment(
-  stats: {
-    totalAttempts: number;
-    evaluatedCount: number;
-    averageBand: number;
-    bestBand: number;
-    task1Average: number;
-    task2Average: number;
-    inProgressCount: number;
-  },
-  criteriaAverages: { ta: number; cc: number; lr: number; gra: number },
+  stats: AnalyticsStats,
+  criteriaAverages: CriteriaAverages,
   credentials?: AICredentials
-): Promise<{ text: string; tone: string }> {
+): Promise<DailyComment> {
   // Need at least one evaluated essay to generate a meaningful comment.
   if (stats.evaluatedCount === 0) {
     return {
@@ -143,7 +105,7 @@ export async function generateDailyComment(
   // Parse tone from the last line.
   const lines = text.trim().split("\n");
   const lastLine = lines[lines.length - 1].trim().toUpperCase();
-  let tone = "neutral";
+  let tone: DailyComment["tone"] = "neutral";
   if (lastLine.includes("POSITIVE")) tone = "positive";
   else if (lastLine.includes("PUSH")) tone = "push";
 

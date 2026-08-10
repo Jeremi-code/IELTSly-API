@@ -1,7 +1,10 @@
 import playwright from "playwright";
 const { chromium } = playwright;
-import { z } from "zod";
 import { Question, computeTextHash } from "../models/question.model.js";
+import {
+  extractedQuestionSchema,
+  type ExtractedQuestion,
+} from "../zod/question.schema.js";
 
 // ── Configuration ───────────────────────────────────────────────────
 
@@ -16,16 +19,6 @@ function getSourceUrls(): string[] {
   }
   return DEFAULT_SOURCES;
 }
-
-// ── Schema for extracted questions ──────────────────────────────────
-const extractedQuestionSchema = z.object({
-  taskType: z.enum(["task1", "task2"]),
-  category: z.string().optional(),
-  text: z.string(),
-  imageUrl: z.string().optional(),
-});
-
-type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
 
 // ── Main scraper function ───────────────────────────────────────────
 export async function scrapeQuestions(): Promise<{
