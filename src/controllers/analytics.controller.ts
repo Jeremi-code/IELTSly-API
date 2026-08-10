@@ -2,6 +2,14 @@ import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
 import { generateDailyComment } from "../services/evaluation.service.js";
+import { round1dp, buildStaticComment } from "../utils/analytics.utils.js";
+import type {
+  AnalyticsStats,
+  CriteriaAverages,
+  TrendPoint,
+  Improvement,
+  DailyComment,
+} from "../types/analytics.types.js";
 
 // ── GET /api/analytics ──────────────────────────────────────────────
 export async function getAnalytics(
@@ -39,7 +47,7 @@ export async function getAnalytics(
       },
     ]);
 
-    const stats = {
+    const stats: AnalyticsStats = {
       totalAttempts: statsResult?.totalAttempts ?? 0,
       evaluatedCount: statsResult?.evaluatedCount ?? 0,
       inProgressCount: statsResult?.inProgressCount ?? 0,
@@ -72,7 +80,7 @@ export async function getAnalytics(
         },
       },
     ]);
-    const criteriaAverages = {
+    const criteriaAverages: CriteriaAverages = {
       ta: round1dp(criteriaResult?.ta ?? 0),
       cc: round1dp(criteriaResult?.cc ?? 0),
       lr: round1dp(criteriaResult?.lr ?? 0),
@@ -89,7 +97,7 @@ export async function getAnalytics(
       .select("_id createdAt evaluation.overallBand type")
       .lean();
 
-    const trend = trendDocs
+    const trend: TrendPoint[] = trendDocs
       .reverse()
       .map((doc) => ({
         id: doc._id,
@@ -107,7 +115,7 @@ export async function getAnalytics(
       .select("_id reworkOf evaluation.overallBand createdAt")
       .lean();
 
-    const improvements = [];
+    const improvements: Improvement[] = [];
     for (const rework of reworks) {
       const original = await Essay.findOne({
         _id: rework.reworkOf,
@@ -134,7 +142,7 @@ export async function getAnalytics(
     const apiKey = req.headers["x-api-key"] as string | undefined;
     const provider = req.headers["x-ai-provider"] as string | undefined;
 
-    let dailyComment: { text: string; tone: string };
+    let dailyComment: DailyComment;
     try {
       if (apiKey && (provider === "gemini" || provider === "openai")) {
         dailyComment = await generateDailyComment(stats, criteriaAverages, {
@@ -153,28 +161,4 @@ export async function getAnalytics(
   } catch (err) {
     next(err);
   }
-}
-
-// ── Utilities ───────────────────────────────────────────────────────
-function round1dp(n: number): number {
-  return Math.round(n * 10) / 10;
-}
-
-function buildStaticComment(stats: { averageBand: number; evaluatedCount: number }) {
-  if (stats.evaluatedCount === 0) {
-    return {
-      text: "Welcome to IELTSly! Submit your first essay to start tracking your progress.",
-      tone: "neutral",
-    };
-  }
-  if (stats.averageBand >= 7) {
-    return {
-      text: `Great work! Your average band of ${stats.averageBand} shows strong writing ability. Keep refining your vocabulary for even higher scores.`,
-      tone: "positive",
-    };
-  }
-  return {
-    text: `You're making progress with an average band of ${stats.averageBand}. Focus on one criterion per session to see targeted improvements.`,
-    tone: "push",
-  };
 }
