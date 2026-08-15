@@ -62,6 +62,49 @@ export function cleanIeltsPrompt(text: string): string {
     .trim();
 }
 
+export function isJunkText(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (
+    t.startsWith("note:") ||
+    t.startsWith("note that") ||
+    t.startsWith("tip:") ||
+    t.startsWith("tips:") ||
+    t.startsWith("remember:") ||
+    t.startsWith("advice:") ||
+    t.startsWith("source:") ||
+    t.startsWith("how to") ||
+    t.startsWith("according to") ||
+    t.startsWith("regarding the") ||
+    t.startsWith("overall,") ||
+    t.startsWith("in conclusion,") ||
+    t.startsWith("an ielts") ||
+    t.startsWith("this ielts") ||
+    t.startsWith("this sample answer") ||
+    t.startsWith("below are some") ||
+    t.startsWith("while this task") ||
+    t.startsWith("the answer can") ||
+    t.startsWith("well done") ||
+    t.startsWith("we can see that") ||
+    t.startsWith("most of you") ||
+    t.startsWith("free ielts") ||
+    t.startsWith("developed by") ||
+    t.startsWith("ielts essay questions") ||
+    t.startsWith("the ielts practice") ||
+    t.startsWith("practice questions for") ||
+    t.startsWith("reported essay questions are") ||
+    t.startsWith("all essay questions below") ||
+    t.includes("the answer can’t be") ||
+    t.includes("the answer cannot be") ||
+    t.includes("click here") ||
+    t.includes("subscribe") ||
+    t.includes("ieltsliz.com") ||
+    t.includes("i like to call")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function parseLizPrompts(paragraphs: string[]): string[] {
   const extracted: string[] = [];
   let currentStatement = "";
@@ -73,22 +116,7 @@ export function parseLizPrompts(paragraphs: string[]): string[] {
 
   for (const p of paragraphs) {
     const trimmed = p.trim();
-    if (!trimmed) continue;
-
-    if (
-      trimmed.includes("Click here") ||
-      trimmed.includes("Subscribe") ||
-      trimmed.includes("Recent Questions") ||
-      trimmed.startsWith("Free IELTS") ||
-      trimmed.startsWith("Developed by") ||
-      trimmed.startsWith("IELTS Essay Questions") ||
-      trimmed.startsWith("The IELTS practice") ||
-      trimmed.startsWith("Reported essay questions are") ||
-      trimmed.startsWith("All essay questions below") ||
-      trimmed.startsWith("Practice questions for")
-    ) {
-      continue;
-    }
+    if (!trimmed || isJunkText(trimmed)) continue;
 
     if (isInstruction(trimmed)) {
       if (currentStatement) {
@@ -105,13 +133,13 @@ export function parseLizPrompts(paragraphs: string[]): string[] {
     }
   }
 
-  if (currentStatement && currentStatement.length > 50) {
+  if (currentStatement && currentStatement.length > 50 && !isJunkText(currentStatement)) {
     extracted.push(currentStatement);
   }
 
   return extracted
     .map(cleanIeltsPrompt)
-    .filter((q) => q.length > 40 && !q.toLowerCase().includes("ieltsliz.com"));
+    .filter((q) => q.length > 40 && !isJunkText(q));
 }
 
 export async function scrapeLiz(): Promise<{
@@ -199,19 +227,39 @@ export async function scrapeLiz(): Promise<{
 
         const items: { text: string; imageUrl?: string }[] = [];
         const paragraphs = Array.from(content.querySelectorAll("p, ol li"));
+
+        // Find figures/images on page (handling WordPress lazy-load attributes)
+        const getRealSrc = (el: HTMLImageElement | null): string | undefined => {
+          if (!el) return undefined;
+          const candidate =
+            el.getAttribute("data-orig-file") ||
+            el.getAttribute("data-src") ||
+            el.getAttribute("data-lazy-src") ||
+            el.getAttribute("data-full-url") ||
+            (!el.src.startsWith("data:") ? el.src : undefined);
+
+          if (!candidate) return undefined;
+          // Strip WordPress thumbnail dimensions like -300x181.png to get full resolution
+          return candidate.replace(/-\d+x\d+(\.[a-zA-Z0-9]+)$/, "$1");
+        };
+
+        const images = Array.from(content.querySelectorAll("img"))
+          .map((img) => getRealSrc(img as HTMLImageElement))
+          .filter((src): src is string => Boolean(src && !src.includes("logo") && !src.includes("gravatar") && !src.includes("icon")));
+
         for (const p of paragraphs) {
           const text = (p as HTMLElement).innerText.trim();
           if (
             text.length > 40 &&
-            (text.toLowerCase().includes("chart") ||
-              text.toLowerCase().includes("graph") ||
-              text.toLowerCase().includes("table") ||
-              text.toLowerCase().includes("diagram") ||
-              text.toLowerCase().includes("map") ||
-              text.toLowerCase().includes("summarise the information"))
+            /^(the|below|summarise|the given|the provided)\b/i.test(text) &&
+            /(chart|graph|table|diagram|map|figures?|pie|bar|line|process)/i.test(text) &&
+            /(shows?|illustrates?|depicts?|compares?|gives? information|presents?|summarise)/i.test(text)
           ) {
-            const img = p.querySelector("img") || p.parentElement?.querySelector("img");
-            items.push({ text, imageUrl: img ? img.src : undefined });
+            // Find closest image
+            const directImg = p.querySelector("img") || p.parentElement?.querySelector("img");
+            const imgUrl = getRealSrc(directImg as HTMLImageElement) || images[0];
+
+            items.push({ text, imageUrl: imgUrl });
           }
         }
         return items;
@@ -221,6 +269,7 @@ export async function scrapeLiz(): Promise<{
       console.log(`  Found ${task1Items.length} Task 1 items on ${url.split("/").pop()}`);
 
       for (const item of task1Items) {
+        if (isJunkText(item.text)) continue;
         const cleanText = cleanIeltsPrompt(item.text);
         const category = detectCategory(cleanText, "task1") || "Bar Chart";
         const textHash = computeTextHash(cleanText);

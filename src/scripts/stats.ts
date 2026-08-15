@@ -20,15 +20,31 @@ async function check() {
     { $sort: { "_id.taskType": 1, count: -1 } },
   ]);
 
+  const withImages = await Question.countDocuments({
+    taskType: "task1",
+    imageUrl: { $exists: true, $ne: "" },
+  });
+  const withoutImages = await Question.countDocuments({
+    taskType: "task1",
+    $or: [{ imageUrl: { $exists: false } }, { imageUrl: "" }, { imageUrl: null }],
+  });
+
   console.log(`\n========================================`);
   console.log(`Question Bank Statistics:`);
   console.log(`  Total in DB: ${total}`);
-  console.log(`  Task 1: ${task1}`);
+  console.log(`  Task 1: ${task1} (With Image: ${withImages}, No Image: ${withoutImages})`);
   console.log(`  Task 2: ${task2}`);
   console.log(`----------------------------------------`);
   console.log(`Category Breakdown:`);
   categories.forEach((c) => {
     console.log(`  [${c._id.taskType}] ${c._id.category || "Uncategorized"}: ${c.count}`);
+  });
+  console.log(`----------------------------------------`);
+  console.log(`Task 1 Sample Questions:`);
+  const task1Samples = await Question.find({ taskType: "task1" }).limit(10);
+  task1Samples.forEach((q, i) => {
+    console.log(`\n[${i + 1}] Category: ${q.category} | ImageUrl: ${q.imageUrl || "NONE"}`);
+    console.log(`    Text: ${q.text}`);
   });
   console.log(`========================================\n`);
 
