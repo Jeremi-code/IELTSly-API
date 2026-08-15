@@ -6,7 +6,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx src/scripts/seed.ts",
-    "migrate:categories": "tsx src/scripts/migrate-categories.ts"
+    "migrate:categories": "tsx src/scripts/migrate-categories.ts",
+    "scrape:liz": "tsx src/scripts/scrape-liz.ts"
   },
   "type": "module",
   "dependencies": {
