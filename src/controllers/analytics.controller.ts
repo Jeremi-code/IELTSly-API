@@ -3,6 +3,7 @@ import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
 import { generateDailyComment } from "../services/evaluation.service.js";
 import { round1dp, buildStaticComment } from "../utils/analytics.utils.js";
+import { getDecryptedCredentials } from "../services/credential.service.js";
 import type {
   AnalyticsStats,
   CriteriaAverages,
@@ -138,24 +139,33 @@ export async function getAnalytics(
       }
     }
 
-    // ── Daily comment (AI-generated or static fallback) ──────────
-    const apiKey = req.headers["x-api-key"] as string | undefined;
-    const provider = req.headers["x-ai-provider"] as string | undefined;
-
+    // ── Daily comment (AI-generated from user's encrypted key or headers or static fallback) ──
     let dailyComment: DailyComment;
     try {
-      if (apiKey && (provider === "gemini" || provider === "openai")) {
-        dailyComment = await generateDailyComment(stats, criteriaAverages, {
-          apiKey,
-          provider,
-        });
+      let credentials = await getDecryptedCredentials(userId);
+      if (!credentials) {
+        const headerKey = (req.headers["x-api-key"] as string) || undefined;
+        const headerProvider = (req.headers["x-ai-provider"] as string) || undefined;
+        const headerModel = (req.headers["x-ai-model"] as string) || undefined;
+
+        if (headerKey && (headerProvider === "gemini" || headerProvider === "openai")) {
+          credentials = {
+            apiKey: headerKey,
+            provider: headerProvider,
+            model: headerModel,
+          };
+        }
+      }
+
+      if (credentials) {
+        dailyComment = await generateDailyComment(stats, criteriaAverages, credentials);
       } else {
-        // User provided no valid key — static fallback.
         dailyComment = buildStaticComment(stats);
       }
     } catch {
       dailyComment = buildStaticComment(stats);
     }
+
 
     res.json({ stats, criteriaAverages, trend, improvements, dailyComment });
   } catch (err) {

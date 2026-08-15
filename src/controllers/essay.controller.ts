@@ -3,6 +3,7 @@ import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
 import { Question, computeTextHash } from "../models/question.model.js";
 import { evaluateEssay as runEvaluation } from "../services/evaluation.service.js";
+import { getDecryptedCredentials } from "../services/credential.service.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function wordCount(text: string): number {
@@ -19,8 +20,7 @@ export async function createEssay(
     const userId = req.user!.id;
     const { type, mode, questionId, question, response, durationSec } = req.body;
 
-    // Build the question snapshot.
-    let snapshot = question; // user-supplied snapshot (custom prompt)
+    let snapshot = question;
 
     if (questionId) {
       const bankQuestion = await Question.findById(questionId);
@@ -28,7 +28,7 @@ export async function createEssay(
         res.status(404).json({ message: "Question not found in the bank." });
         return;
       }
-      // Copy snapshot from the bank & increment timesUsed.
+
       snapshot = {
         text: bankQuestion.text,
         category: bankQuestion.category,
@@ -174,20 +174,32 @@ export async function evaluateEssay(
       return;
     }
 
-    // User brings their own AI key (Gemini or OpenAI) — never a server key.
-    const apiKey = req.headers["x-api-key"] as string | undefined;
-    const provider = req.headers["x-ai-provider"] as string | undefined;
+    const userId = req.user!.id;
 
-    if (!apiKey || !provider) {
+    // User brings their own AI key (stored encrypted in DB or provided in request headers)
+    let credentials = await getDecryptedCredentials(userId);
+
+    if (!credentials) {
+      const headerKey = (req.headers["x-api-key"] as string) || undefined;
+      const headerProvider = (req.headers["x-ai-provider"] as string) || undefined;
+      const headerModel = (req.headers["x-ai-model"] as string) || undefined;
+
+      if (headerKey && (headerProvider === "gemini" || headerProvider === "openai")) {
+        credentials = {
+          apiKey: headerKey,
+          provider: headerProvider,
+          model: headerModel,
+        };
+      }
+    }
+
+    if (!credentials || !credentials.apiKey) {
       res.status(400).json({
-        message: "An API key (x-api-key) and provider (x-ai-provider: gemini or openai) are required. Add your key in Settings.",
+        message: "No AI API key found. Please connect your Gemini or OpenAI key in Settings.",
       });
       return;
     }
-    if (provider !== "gemini" && provider !== "openai") {
-      res.status(400).json({ message: "x-ai-provider must be 'gemini' or 'openai'." });
-      return;
-    }
+
 
     let evaluation;
     try {
@@ -198,9 +210,9 @@ export async function evaluateEssay(
         mode: essay.mode as "practice" | "exam",
         questionText: essay.question.text,
         questionCategory: essay.question.category ?? undefined,
-        apiKey,
-        provider,
-        model: req.headers["x-ai-model"] as string | undefined,
+        apiKey: credentials.apiKey,
+        provider: credentials.provider,
+        model: credentials.model,
       });
     } catch (err) {
       console.error("Evaluation failed:", err);
