@@ -35,7 +35,7 @@ function buildPrompt(input: EvaluateInput): string {
   return `You are an expert IELTS examiner evaluating a ${taskLabel} essay.${modeNote}
 
 ## Question
-${input.questionText}${input.questionCategory ? ` (Topic: ${input.questionCategory})` : ""}
+${input.questionText}${input.questionCategory ? ` (Category: ${input.questionCategory})` : ""}
 
 ## Student's Response (${input.wordCount} words)
 ${input.response}

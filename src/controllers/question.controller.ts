@@ -9,13 +9,19 @@ export async function listQuestions(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { taskType, category } = req.query;
+    const { taskType, category, search } = req.query;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
 
     const filter: Record<string, unknown> = {};
-    if (taskType) filter.taskType = taskType;
-    if (category) filter.category = category;
+    if (taskType && taskType !== "all") filter.taskType = taskType;
+    if (category && category !== "all") filter.category = category;
+    if (search && typeof search === "string" && search.trim()) {
+      filter.$or = [
+        { text: { $regex: search.trim(), $options: "i" } },
+        { category: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
 
     const [questions, total] = await Promise.all([
       Question.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
@@ -23,6 +29,54 @@ export async function listQuestions(
     ]);
 
     res.json({ questions, page, limit, total });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── GET /api/questions/categories ───────────────────────────────────
+export async function getCategories(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { taskType } = req.query;
+    const filter: Record<string, unknown> = {};
+    if (taskType && taskType !== "all") filter.taskType = taskType;
+    const categories = await Question.distinct("category", filter);
+    res.json(categories.filter((c) => typeof c === "string" && c.trim().length > 0));
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── GET /api/questions/random ───────────────────────────────────────
+export async function getRandomQuestion(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { taskType, category, search } = req.query;
+    const filter: Record<string, unknown> = {};
+    if (taskType && taskType !== "all") filter.taskType = taskType;
+    if (category && category !== "all") filter.category = category;
+    if (search && typeof search === "string" && search.trim()) {
+      filter.$or = [
+        { text: { $regex: search.trim(), $options: "i" } },
+        { category: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+
+    const count = await Question.countDocuments(filter);
+    if (count === 0) {
+      res.status(404).json({ message: "No questions found matching criteria." });
+      return;
+    }
+    const randomSkip = Math.floor(Math.random() * count);
+    const question = await Question.findOne(filter).skip(randomSkip).lean();
+    res.json(question);
   } catch (err) {
     next(err);
   }

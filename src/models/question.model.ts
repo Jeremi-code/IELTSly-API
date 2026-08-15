@@ -7,6 +7,34 @@ export const QuestionSource = {
   Scraped: "scraped",
 } as const;
 
+export const Task1Category = {
+  BarChart: "Bar Chart",
+  LineGraph: "Line Graph",
+  PieChart: "Pie Chart",
+  Table: "Table",
+  Map: "Map",
+  ProcessDiagram: "Process Diagram",
+  MultipleCharts: "Multiple Charts",
+} as const;
+
+export const Task2Category = {
+  AgreeDisagree: "Agree / Disagree",
+  DiscussBothViews: "Discuss Both Views",
+  AdvantagesDisadvantages: "Advantages & Disadvantages",
+  CausesSolutions: "Causes & Solutions",
+  DirectQuestion: "Direct / Two-Part Question",
+  PositiveNegative: "Positive / Negative Development",
+} as const;
+
+export const QuestionCategory = {
+  ...Task1Category,
+  ...Task2Category,
+} as const;
+
+export type Task1CategoryType = (typeof Task1Category)[keyof typeof Task1Category];
+export type Task2CategoryType = (typeof Task2Category)[keyof typeof Task2Category];
+export type QuestionCategoryType = (typeof QuestionCategory)[keyof typeof QuestionCategory];
+
 // ── Schema ──────────────────────────────────────────────────────────
 const questionSchema = new Schema(
   {
