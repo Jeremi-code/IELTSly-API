@@ -6,7 +6,7 @@ import { scrapeQuestions as runScraper } from "../services/scraper.service.js";
 export async function scrapeQuestions(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const result = await runScraper();

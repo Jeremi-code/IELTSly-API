@@ -7,4 +7,3 @@ export interface AuthRequest extends Request {
   user?: AuthSession["user"];
   session?: AuthSession["session"];
 }
-

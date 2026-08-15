@@ -1,8 +1,23 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
 import { app } from "../src/app.js";
-import { clearDb, startDb, stopDb, seedEssay, TEST_USER, OTHER_USER } from "./helpers.js";
+import {
+  clearDb,
+  startDb,
+  stopDb,
+  seedEssay,
+  TEST_USER,
+  OTHER_USER,
+} from "./helpers.js";
 import { Essay, EssayStatus } from "../src/models/essay.model.js";
 import { Question } from "../src/models/question.model.js";
 import { evaluateEssay } from "../src/services/evaluation.service.js";
@@ -31,7 +46,13 @@ const EVALUATION = {
 async function authedAs(user: typeof TEST_USER): Promise<void> {
   getSession.mockResolvedValue({
     user,
-    session: { id: "sess-1", userId: user.id, expiresAt: new Date(), createdAt: new Date(), updatedAt: new Date() },
+    session: {
+      id: "sess-1",
+      userId: user.id,
+      expiresAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   } as never);
 }
 
@@ -63,12 +84,24 @@ describe("GET /api/essays", () => {
     const res = await request(app).get("/api/essays");
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(2);
-    expect(new Date(res.body.essays[0].createdAt) > new Date(res.body.essays[1].createdAt)).toBe(true);
+    expect(
+      new Date(res.body.essays[0].createdAt) >
+        new Date(res.body.essays[1].createdAt),
+    ).toBe(true);
   });
 
   it("filters by status and paginates", async () => {
     await authedAs(TEST_USER);
-    await seedEssay({ status: EssayStatus.Evaluated, evaluation: { overallBand: 6, criteria: { ta: 6, cc: 6, lr: 6, gra: 6 }, feedback: "ok", tips: [], evaluatedAt: new Date() } });
+    await seedEssay({
+      status: EssayStatus.Evaluated,
+      evaluation: {
+        overallBand: 6,
+        criteria: { ta: 6, cc: 6, lr: 6, gra: 6 },
+        feedback: "ok",
+        tips: [],
+        evaluatedAt: new Date(),
+      },
+    });
     await seedEssay();
 
     const res = await request(app)
@@ -108,13 +141,18 @@ describe("POST /api/essays", () => {
 
   it("accepts a custom question when no questionId is given", async () => {
     await authedAs(TEST_USER);
-    const res = await request(app).post("/api/essays").send({
-      type: "task1",
-      mode: "exam",
-      question: { text: "The chart shows energy use in five countries.", category: "climate" },
-      response: "The chart clearly shows a rising trend.",
-      durationSec: 400,
-    });
+    const res = await request(app)
+      .post("/api/essays")
+      .send({
+        type: "task1",
+        mode: "exam",
+        question: {
+          text: "The chart shows energy use in five countries.",
+          category: "climate",
+        },
+        response: "The chart clearly shows a rising trend.",
+        durationSec: 400,
+      });
     expect(res.status).toBe(201);
     expect(res.body.question.text).toContain("chart");
   });
@@ -167,9 +205,17 @@ describe("PUT /api/essays/:id", () => {
     await authedAs(TEST_USER);
     const essay = await seedEssay({
       status: EssayStatus.Evaluated,
-      evaluation: { overallBand: 6, criteria: { ta: 6, cc: 6, lr: 6, gra: 6 }, feedback: "ok", tips: [], evaluatedAt: new Date() },
+      evaluation: {
+        overallBand: 6,
+        criteria: { ta: 6, cc: 6, lr: 6, gra: 6 },
+        feedback: "ok",
+        tips: [],
+        evaluatedAt: new Date(),
+      },
     });
-    const res = await request(app).put(`/api/essays/${essay._id}`).send({ response: "Trying to rewrite." });
+    const res = await request(app)
+      .put(`/api/essays/${essay._id}`)
+      .send({ response: "Trying to rewrite." });
     expect(res.status).toBe(409);
   });
 });
@@ -206,7 +252,7 @@ describe("POST /api/essays/:id/evaluate", () => {
     expect(res.body.status).toBe("evaluated");
     expect(res.body.evaluation.overallBand).toBe(7.5);
     expect(mockEvaluate).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: "test-key", provider: "gemini" })
+      expect.objectContaining({ apiKey: "test-key", provider: "gemini" }),
     );
   });
 
@@ -230,7 +276,13 @@ describe("POST /api/essays/:id/evaluate", () => {
     await authedAs(TEST_USER);
     const essay = await seedEssay({
       status: EssayStatus.Evaluated,
-      evaluation: { overallBand: 6, criteria: { ta: 6, cc: 6, lr: 6, gra: 6 }, feedback: "ok", tips: [], evaluatedAt: new Date() },
+      evaluation: {
+        overallBand: 6,
+        criteria: { ta: 6, cc: 6, lr: 6, gra: 6 },
+        feedback: "ok",
+        tips: [],
+        evaluatedAt: new Date(),
+      },
     });
     const res = await request(app)
       .post(`/api/essays/${essay._id}/evaluate`)
@@ -253,12 +305,22 @@ describe("POST /api/essays/:id/rework", () => {
       questionId: q._id,
       question: { text: q.text, category: "technology" },
       status: EssayStatus.Evaluated,
-      evaluation: { overallBand: 6.5, criteria: { ta: 6.5, cc: 6.5, lr: 6.5, gra: 6.5 }, feedback: "ok", tips: [], evaluatedAt: new Date() },
+      evaluation: {
+        overallBand: 6.5,
+        criteria: { ta: 6.5, cc: 6.5, lr: 6.5, gra: 6.5 },
+        feedback: "ok",
+        tips: [],
+        evaluatedAt: new Date(),
+      },
     });
 
     const res = await request(app)
       .post(`/api/essays/${original._id}/rework`)
-      .send({ response: "A much better revised essay with stronger arguments and examples.", durationSec: 700 });
+      .send({
+        response:
+          "A much better revised essay with stronger arguments and examples.",
+        durationSec: 700,
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.reworkOf?.toString()).toBe(original._id.toString());

@@ -10,7 +10,7 @@ import type { AIProvider } from "../types/ai.types.js";
 export async function getAICredentials(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;
@@ -24,7 +24,7 @@ export async function getAICredentials(
 export async function saveAICredentials(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;
@@ -52,7 +52,8 @@ export async function saveAICredentials(
     const trimmedKey = apiKey.trim();
     if (provider === "gemini" && !/^AIza[0-9A-Za-z_-]{20,}$/.test(trimmedKey)) {
       res.status(400).json({
-        message: "Invalid Google Gemini API key format (should start with AIza...).",
+        message:
+          "Invalid Google Gemini API key format (should start with AIza...).",
       });
       return;
     }
@@ -79,7 +80,7 @@ export async function saveAICredentials(
 export async function deleteAICredentials(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;

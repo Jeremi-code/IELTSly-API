@@ -1,5 +1,13 @@
 import request from "supertest";
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
 import { app } from "../src/app.js";
 import { clearDb, startDb, stopDb, TEST_USER } from "./helpers.js";
 import { Question } from "../src/models/question.model.js";
@@ -15,7 +23,13 @@ const getSession = vi.mocked(auth.api.getSession);
 async function authed(): Promise<void> {
   getSession.mockResolvedValue({
     user: TEST_USER,
-    session: { id: "sess-1", userId: TEST_USER.id, expiresAt: new Date(), createdAt: new Date(), updatedAt: new Date() },
+    session: {
+      id: "sess-1",
+      userId: TEST_USER.id,
+      expiresAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   } as never);
 }
 
@@ -63,7 +77,9 @@ describe("POST /api/questions", () => {
 
   it("returns 400 when required fields are missing", async () => {
     await authed();
-    const res = await request(app).post("/api/questions").send({ text: "Only text." });
+    const res = await request(app)
+      .post("/api/questions")
+      .send({ text: "Only text." });
     expect(res.status).toBe(400);
   });
 });
@@ -72,11 +88,25 @@ describe("GET /api/questions", () => {
   it("lists with filters and pagination shape", async () => {
     await authed();
     await Question.create([
-      { taskType: "task1", text: "The line graph shows population trends in three cities.", category: "Line Graph", source: "official", textHash: "h1" },
-      { taskType: "task2", text: "Discuss both views on remote work.", category: "Discuss Both Views", source: "scraped", textHash: "h2" },
+      {
+        taskType: "task1",
+        text: "The line graph shows population trends in three cities.",
+        category: "Line Graph",
+        source: "official",
+        textHash: "h1",
+      },
+      {
+        taskType: "task2",
+        text: "Discuss both views on remote work.",
+        category: "Discuss Both Views",
+        source: "scraped",
+        textHash: "h2",
+      },
     ]);
 
-    const res = await request(app).get("/api/questions").query({ taskType: "task2" });
+    const res = await request(app)
+      .get("/api/questions")
+      .query({ taskType: "task2" });
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(1);
     expect(res.body.questions[0].taskType).toBe("task2");
@@ -86,11 +116,25 @@ describe("GET /api/questions", () => {
   it("filters with regex search", async () => {
     await authed();
     await Question.create([
-      { taskType: "task1", text: "The bar chart shows renewable energy usage.", category: "Bar Chart", source: "official", textHash: "h3" },
-      { taskType: "task2", text: "Some people think space exploration is a waste of money.", category: "Agree / Disagree", source: "scraped", textHash: "h4" },
+      {
+        taskType: "task1",
+        text: "The bar chart shows renewable energy usage.",
+        category: "Bar Chart",
+        source: "official",
+        textHash: "h3",
+      },
+      {
+        taskType: "task2",
+        text: "Some people think space exploration is a waste of money.",
+        category: "Agree / Disagree",
+        source: "scraped",
+        textHash: "h4",
+      },
     ]);
 
-    const res = await request(app).get("/api/questions").query({ search: "renewable" });
+    const res = await request(app)
+      .get("/api/questions")
+      .query({ search: "renewable" });
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(1);
     expect(res.body.questions[0].category).toBe("Bar Chart");
@@ -99,11 +143,25 @@ describe("GET /api/questions", () => {
   it("gets distinct categories for taskType", async () => {
     await authed();
     await Question.create([
-      { taskType: "task1", text: "Pie Chart A", category: "Pie Chart", source: "official", textHash: "h5" },
-      { taskType: "task2", text: "Essay B", category: "Agree / Disagree", source: "official", textHash: "h6" },
+      {
+        taskType: "task1",
+        text: "Pie Chart A",
+        category: "Pie Chart",
+        source: "official",
+        textHash: "h5",
+      },
+      {
+        taskType: "task2",
+        text: "Essay B",
+        category: "Agree / Disagree",
+        source: "official",
+        textHash: "h6",
+      },
     ]);
 
-    const res = await request(app).get("/api/questions/categories").query({ taskType: "task1" });
+    const res = await request(app)
+      .get("/api/questions/categories")
+      .query({ taskType: "task1" });
     expect(res.status).toBe(200);
     expect(res.body).toContain("Pie Chart");
     expect(res.body).not.toContain("Agree / Disagree");
@@ -112,18 +170,27 @@ describe("GET /api/questions", () => {
   it("gets a random question", async () => {
     await authed();
     await Question.create([
-      { taskType: "task2", text: "Prompt random test", category: "Agree / Disagree", source: "official", textHash: "h7" },
+      {
+        taskType: "task2",
+        text: "Prompt random test",
+        category: "Agree / Disagree",
+        source: "official",
+        textHash: "h7",
+      },
     ]);
 
-
-    const res = await request(app).get("/api/questions/random").query({ taskType: "task2" });
+    const res = await request(app)
+      .get("/api/questions/random")
+      .query({ taskType: "task2" });
     expect(res.status).toBe(200);
     expect(res.body.text).toBe("Prompt random test");
   });
 
   it("returns 404 for a missing id", async () => {
     await authed();
-    const res = await request(app).get("/api/questions/000000000000000000000000");
+    const res = await request(app).get(
+      "/api/questions/000000000000000000000000",
+    );
     expect(res.status).toBe(404);
   });
 });

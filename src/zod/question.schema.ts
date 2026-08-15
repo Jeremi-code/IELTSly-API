@@ -19,7 +19,10 @@ export const Task2CategoryEnum = z.enum([
   "Positive / Negative Development",
 ]);
 
-export const QuestionCategoryEnum = z.union([Task1CategoryEnum, Task2CategoryEnum]);
+export const QuestionCategoryEnum = z.union([
+  Task1CategoryEnum,
+  Task2CategoryEnum,
+]);
 
 export const extractedQuestionSchema = z.object({
   taskType: z.enum(["task1", "task2"]),

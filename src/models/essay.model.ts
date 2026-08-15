@@ -16,7 +16,7 @@ const questionSnapshotSchema = new Schema(
     category: { type: String },
     imageUrl: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const criteriaSchema = new Schema(
@@ -26,7 +26,7 @@ const criteriaSchema = new Schema(
     lr: { type: Number, required: true },
     gra: { type: Number, required: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const evaluationSchema = new Schema(
@@ -37,7 +37,7 @@ const evaluationSchema = new Schema(
     tips: { type: [String], required: true },
     evaluatedAt: { type: Date, required: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // ── Main essay schema ───────────────────────────────────────────────
@@ -82,7 +82,7 @@ const essaySchema = new Schema(
   {
     timestamps: true,
     collection: "essay",
-  }
+  },
 );
 
 // ── Indexes ─────────────────────────────────────────────────────────

@@ -1,9 +1,16 @@
 import { generateObject, generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
-import { evaluationOutputSchema, type EvaluationResult } from "../zod/evaluation.schema.js";
+import {
+  evaluationOutputSchema,
+  type EvaluationResult,
+} from "../zod/evaluation.schema.js";
 import type { AICredentials, EvaluateInput } from "../types/ai.types.js";
-import type { AnalyticsStats, CriteriaAverages, DailyComment } from "../types/analytics.types.js";
+import type {
+  AnalyticsStats,
+  CriteriaAverages,
+  DailyComment,
+} from "../types/analytics.types.js";
 
 const DEFAULT_MODELS: Record<EvaluateInput["provider"], string> = {
   gemini: "gemini-3.5-flash",
@@ -57,7 +64,7 @@ Provide 2–4 sentences of encouraging but specific feedback and 2–4 concrete,
 
 // ── Main evaluation function ────────────────────────────────────────
 export async function evaluateEssay(
-  input: EvaluateInput
+  input: EvaluateInput,
 ): Promise<EvaluationResult> {
   const model = resolveModel(input);
 
@@ -76,7 +83,7 @@ export async function evaluateEssay(
 export async function generateDailyComment(
   stats: AnalyticsStats,
   criteriaAverages: CriteriaAverages,
-  credentials?: AICredentials
+  credentials?: AICredentials,
 ): Promise<DailyComment> {
   // Need at least one evaluated essay to generate a meaningful comment.
   if (stats.evaluatedCount === 0) {

@@ -5,7 +5,7 @@ export function round1dp(n: number): number {
 }
 
 export function buildStaticComment(
-  stats: Pick<AnalyticsStats, "averageBand" | "evaluatedCount">
+  stats: Pick<AnalyticsStats, "averageBand" | "evaluatedCount">,
 ): DailyComment {
   if (stats.evaluatedCount === 0) {
     return {

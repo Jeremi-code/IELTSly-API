@@ -10,7 +10,7 @@ export interface AICredentialStatusResponse {
 }
 
 export async function getUserCredentialStatus(
-  userId: string
+  userId: string,
 ): Promise<AICredentialStatusResponse> {
   const credential = await AiCredential.findOne({ userId }).lean();
   if (!credential) {
@@ -25,7 +25,7 @@ export async function getUserCredentialStatus(
 }
 
 export async function getDecryptedCredentials(
-  userId: string
+  userId: string,
 ): Promise<AICredentials | null> {
   const credential = await AiCredential.findOne({ userId });
   if (!credential) {
@@ -52,7 +52,7 @@ export async function getDecryptedCredentials(
 
 export async function saveUserCredentials(
   userId: string,
-  data: { provider: AIProvider; apiKey: string; model?: string }
+  data: { provider: AIProvider; apiKey: string; model?: string },
 ): Promise<AICredentialStatusResponse> {
   const { encrypted, iv, authTag } = encrypt(data.apiKey.trim());
   const maskedKey = maskApiKey(data.apiKey.trim());
@@ -67,7 +67,7 @@ export async function saveUserCredentials(
       authTag,
       maskedKey,
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return {
@@ -79,7 +79,7 @@ export async function saveUserCredentials(
 }
 
 export async function deleteUserCredentials(
-  userId: string
+  userId: string,
 ): Promise<{ isConnected: boolean }> {
   await AiCredential.deleteOne({ userId });
   return { isConnected: false };

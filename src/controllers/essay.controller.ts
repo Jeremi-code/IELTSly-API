@@ -14,11 +14,12 @@ function wordCount(text: string): number {
 export async function createEssay(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;
-    const { type, mode, questionId, question, response, durationSec } = req.body;
+    const { type, mode, questionId, question, response, durationSec } =
+      req.body;
 
     let snapshot = question;
 
@@ -39,7 +40,12 @@ export async function createEssay(
     }
 
     if (!snapshot?.text) {
-      res.status(400).json({ message: "A question text is required (provide questionId or question.text)." });
+      res
+        .status(400)
+        .json({
+          message:
+            "A question text is required (provide questionId or question.text).",
+        });
       return;
     }
 
@@ -65,13 +71,16 @@ export async function createEssay(
 export async function listEssays(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;
     const { type, status, mode } = req.query;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    );
 
     const filter: Record<string, unknown> = { user: userId };
     if (type) filter.type = type;
@@ -79,7 +88,11 @@ export async function listEssays(
     if (mode) filter.mode = mode;
 
     const [essays, total] = await Promise.all([
-      Essay.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Essay.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Essay.countDocuments(filter),
     ]);
 
@@ -93,7 +106,7 @@ export async function listEssays(
 export async function getEssay(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const essay = await Essay.findOne({
@@ -115,7 +128,7 @@ export async function getEssay(
 export async function updateEssay(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const essay = await Essay.findOne({
@@ -130,7 +143,8 @@ export async function updateEssay(
 
     if (essay.status !== EssayStatus.InProgress) {
       res.status(409).json({
-        message: "Only in-progress drafts can be updated. Use rework for evaluated essays.",
+        message:
+          "Only in-progress drafts can be updated. Use rework for evaluated essays.",
       });
       return;
     }
@@ -154,7 +168,7 @@ export async function updateEssay(
 export async function evaluateEssay(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const essay = await Essay.findOne({
@@ -181,10 +195,14 @@ export async function evaluateEssay(
 
     if (!credentials) {
       const headerKey = (req.headers["x-api-key"] as string) || undefined;
-      const headerProvider = (req.headers["x-ai-provider"] as string) || undefined;
+      const headerProvider =
+        (req.headers["x-ai-provider"] as string) || undefined;
       const headerModel = (req.headers["x-ai-model"] as string) || undefined;
 
-      if (headerKey && (headerProvider === "gemini" || headerProvider === "openai")) {
+      if (
+        headerKey &&
+        (headerProvider === "gemini" || headerProvider === "openai")
+      ) {
         credentials = {
           apiKey: headerKey,
           provider: headerProvider,
@@ -195,11 +213,11 @@ export async function evaluateEssay(
 
     if (!credentials || !credentials.apiKey) {
       res.status(400).json({
-        message: "No AI API key found. Please connect your Gemini or OpenAI key in Settings.",
+        message:
+          "No AI API key found. Please connect your Gemini or OpenAI key in Settings.",
       });
       return;
     }
-
 
     let evaluation;
     try {
@@ -237,7 +255,7 @@ export async function evaluateEssay(
 export async function reworkEssay(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const source = await Essay.findOne({

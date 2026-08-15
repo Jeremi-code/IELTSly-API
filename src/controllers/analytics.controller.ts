@@ -16,7 +16,7 @@ import type {
 export async function getAnalytics(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const userId = req.user!.id;
@@ -29,19 +29,31 @@ export async function getAnalytics(
           _id: null,
           totalAttempts: { $sum: 1 },
           evaluatedCount: {
-            $sum: { $cond: [{ $eq: ["$status", EssayStatus.Evaluated] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$status", EssayStatus.Evaluated] }, 1, 0],
+            },
           },
           inProgressCount: {
-            $sum: { $cond: [{ $eq: ["$status", EssayStatus.InProgress] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$status", EssayStatus.InProgress] }, 1, 0],
+            },
           },
           averageBand: {
             $avg: {
-              $cond: [{ $eq: ["$status", EssayStatus.Evaluated] }, "$evaluation.overallBand", null],
+              $cond: [
+                { $eq: ["$status", EssayStatus.Evaluated] },
+                "$evaluation.overallBand",
+                null,
+              ],
             },
           },
           bestBand: {
             $max: {
-              $cond: [{ $eq: ["$status", EssayStatus.Evaluated] }, "$evaluation.overallBand", null],
+              $cond: [
+                { $eq: ["$status", EssayStatus.Evaluated] },
+                "$evaluation.overallBand",
+                null,
+              ],
             },
           },
         },
@@ -98,14 +110,12 @@ export async function getAnalytics(
       .select("_id createdAt evaluation.overallBand type")
       .lean();
 
-    const trend: TrendPoint[] = trendDocs
-      .reverse()
-      .map((doc) => ({
-        id: doc._id,
-        date: doc.createdAt,
-        band: doc.evaluation?.overallBand ?? 0,
-        type: doc.type,
-      }));
+    const trend: TrendPoint[] = trendDocs.reverse().map((doc) => ({
+      id: doc._id,
+      date: doc.createdAt,
+      band: doc.evaluation?.overallBand ?? 0,
+      type: doc.type,
+    }));
 
     // ── Rework improvements ───────────────────────────────────────
     const reworks = await Essay.find({
@@ -145,10 +155,14 @@ export async function getAnalytics(
       let credentials = await getDecryptedCredentials(userId);
       if (!credentials) {
         const headerKey = (req.headers["x-api-key"] as string) || undefined;
-        const headerProvider = (req.headers["x-ai-provider"] as string) || undefined;
+        const headerProvider =
+          (req.headers["x-ai-provider"] as string) || undefined;
         const headerModel = (req.headers["x-ai-model"] as string) || undefined;
 
-        if (headerKey && (headerProvider === "gemini" || headerProvider === "openai")) {
+        if (
+          headerKey &&
+          (headerProvider === "gemini" || headerProvider === "openai")
+        ) {
           credentials = {
             apiKey: headerKey,
             provider: headerProvider,
@@ -158,14 +172,17 @@ export async function getAnalytics(
       }
 
       if (credentials) {
-        dailyComment = await generateDailyComment(stats, criteriaAverages, credentials);
+        dailyComment = await generateDailyComment(
+          stats,
+          criteriaAverages,
+          credentials,
+        );
       } else {
         dailyComment = buildStaticComment(stats);
       }
     } catch {
       dailyComment = buildStaticComment(stats);
     }
-
 
     res.json({ stats, criteriaAverages, trend, improvements, dailyComment });
   } catch (err) {

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { evaluateEssay, generateDailyComment } from "../src/services/evaluation.service.js";
+import {
+  evaluateEssay,
+  generateDailyComment,
+} from "../src/services/evaluation.service.js";
 
 vi.mock("ai", () => ({
   generateObject: vi.fn(),
@@ -50,12 +53,16 @@ describe("evaluateEssay", () => {
     const googleModel = vi.fn();
     mockGoogle.mockReturnValue(googleModel as never);
 
-    await evaluateEssay({ ...baseInput, apiKey: "gem-key-1", provider: "gemini" });
+    await evaluateEssay({
+      ...baseInput,
+      apiKey: "gem-key-1",
+      provider: "gemini",
+    });
 
     expect(mockGoogle).toHaveBeenCalledWith({ apiKey: "gem-key-1" });
     expect(googleModel).toHaveBeenCalledWith("gemini-3.5-flash");
     expect(mockGenerateObject).toHaveBeenCalledWith(
-      expect.objectContaining({ schema: expect.anything() })
+      expect.objectContaining({ schema: expect.anything() }),
     );
   });
 
@@ -63,7 +70,11 @@ describe("evaluateEssay", () => {
     const openaiModel = vi.fn();
     mockOpenAI.mockReturnValue(openaiModel as never);
 
-    await evaluateEssay({ ...baseInput, apiKey: "sk-test", provider: "openai" });
+    await evaluateEssay({
+      ...baseInput,
+      apiKey: "sk-test",
+      provider: "openai",
+    });
 
     expect(mockOpenAI).toHaveBeenCalledWith({ apiKey: "sk-test" });
     expect(openaiModel).toHaveBeenCalledWith("gpt-4o-mini");
@@ -84,7 +95,11 @@ describe("evaluateEssay", () => {
   });
 
   it("returns the structured evaluation object", async () => {
-    const result = await evaluateEssay({ ...baseInput, apiKey: "k", provider: "openai" });
+    const result = await evaluateEssay({
+      ...baseInput,
+      apiKey: "k",
+      provider: "openai",
+    });
     expect(result).toEqual(EVALUATION);
   });
 });
@@ -112,16 +127,18 @@ describe("generateDailyComment", () => {
     });
 
     expect(mockGenerateText).toHaveBeenCalledWith(
-      expect.objectContaining({ model: expect.anything() })
+      expect.objectContaining({ model: expect.anything() }),
     );
     expect(result.tone).toBe("positive");
-    expect(result.text).toBe("You are improving steadily.\nKeep practicing transitions.");
+    expect(result.text).toBe(
+      "You are improving steadily.\nKeep practicing transitions.",
+    );
   });
 
   it("returns the welcome message when no essays are evaluated", async () => {
     const result = await generateDailyComment(
       { ...stats, evaluatedCount: 0 },
-      criteria
+      criteria,
     );
     expect(result.text).toContain("Submit your first essay");
   });

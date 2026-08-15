@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
-import { extractQuestionsFromText, scrapeQuestions } from "../src/services/scraper.service.js";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
+import {
+  extractQuestionsFromText,
+  scrapeQuestions,
+} from "../src/services/scraper.service.js";
 import { clearDb, startDb, stopDb } from "./helpers.js";
 import { Question } from "../src/models/question.model.js";
 
@@ -35,7 +46,9 @@ describe("extractQuestionsFromText", () => {
 
   it("detects task1 questions and classifies visual format categories", () => {
     const out = extractQuestionsFromText(PAGE_A, "https://example.com");
-    const task1 = out.find((q) => q.taskType === "task1" && q.text.includes("population trends"));
+    const task1 = out.find(
+      (q) => q.taskType === "task1" && q.text.includes("population trends"),
+    );
     expect(task1).toBeDefined();
     expect(task1?.category).toBe("Line Graph");
   });
@@ -83,15 +96,19 @@ Many people choose to live alone today. Why is this so? Is this beneficial for s
 
   it("ignores blocks without a detectable task type", () => {
     const out = extractQuestionsFromText(PAGE_A, "https://example.com");
-    expect(out.every((q) => !q.text.includes("unrelated paragraph"))).toBe(true);
+    expect(out.every((q) => !q.text.includes("unrelated paragraph"))).toBe(
+      true,
+    );
   });
 
   it("ignores blocks shorter than 30 characters", () => {
-    const out = extractQuestionsFromText("Task 2\nToo short.", "https://example.com");
+    const out = extractQuestionsFromText(
+      "Task 2\nToo short.",
+      "https://example.com",
+    );
     expect(out).toHaveLength(0);
   });
 });
-
 
 vi.mock("playwright", () => ({
   default: {
@@ -121,7 +138,10 @@ describe("scrapeQuestions (integration)", () => {
       close: async () => undefined,
     }));
 
-    vi.stubEnv("SCRAPE_SOURCES", "https://a.example/page-a,https://b.example/page-b");
+    vi.stubEnv(
+      "SCRAPE_SOURCES",
+      "https://a.example/page-a,https://b.example/page-b",
+    );
 
     const first = await scrapeQuestions();
     expect(first.added).toBe(4); // 3 from page A + 1 from page B
@@ -158,7 +178,10 @@ describe("scrapeQuestions (integration)", () => {
       close: async () => undefined,
     }));
 
-    vi.stubEnv("SCRAPE_SOURCES", "https://a.example/bad,https://b.example/good");
+    vi.stubEnv(
+      "SCRAPE_SOURCES",
+      "https://a.example/bad,https://b.example/good",
+    );
 
     const result = await scrapeQuestions();
     expect(result.failed).toBe(1);

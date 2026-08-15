@@ -31,9 +31,12 @@ export const QuestionCategory = {
   ...Task2Category,
 } as const;
 
-export type Task1CategoryType = (typeof Task1Category)[keyof typeof Task1Category];
-export type Task2CategoryType = (typeof Task2Category)[keyof typeof Task2Category];
-export type QuestionCategoryType = (typeof QuestionCategory)[keyof typeof QuestionCategory];
+export type Task1CategoryType =
+  (typeof Task1Category)[keyof typeof Task1Category];
+export type Task2CategoryType =
+  (typeof Task2Category)[keyof typeof Task2Category];
+export type QuestionCategoryType =
+  (typeof QuestionCategory)[keyof typeof QuestionCategory];
 
 // ── Schema ──────────────────────────────────────────────────────────
 const questionSchema = new Schema(
@@ -60,7 +63,7 @@ const questionSchema = new Schema(
   {
     timestamps: true,
     collection: "question",
-  }
+  },
 );
 
 // ── Indexes ─────────────────────────────────────────────────────────

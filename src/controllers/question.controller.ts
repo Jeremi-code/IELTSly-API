@@ -6,12 +6,15 @@ import { Question, computeTextHash } from "../models/question.model.js";
 export async function listQuestions(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { taskType, category, search } = req.query;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    );
 
     const filter: Record<string, unknown> = {};
     if (taskType && taskType !== "all") filter.taskType = taskType;
@@ -24,7 +27,11 @@ export async function listQuestions(
     }
 
     const [questions, total] = await Promise.all([
-      Question.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Question.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Question.countDocuments(filter),
     ]);
 
@@ -38,14 +45,16 @@ export async function listQuestions(
 export async function getCategories(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { taskType } = req.query;
     const filter: Record<string, unknown> = {};
     if (taskType && taskType !== "all") filter.taskType = taskType;
     const categories = await Question.distinct("category", filter);
-    res.json(categories.filter((c) => typeof c === "string" && c.trim().length > 0));
+    res.json(
+      categories.filter((c) => typeof c === "string" && c.trim().length > 0),
+    );
   } catch (err) {
     next(err);
   }
@@ -55,7 +64,7 @@ export async function getCategories(
 export async function getRandomQuestion(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { taskType, category, search } = req.query;
@@ -71,7 +80,9 @@ export async function getRandomQuestion(
 
     const count = await Question.countDocuments(filter);
     if (count === 0) {
-      res.status(404).json({ message: "No questions found matching criteria." });
+      res
+        .status(404)
+        .json({ message: "No questions found matching criteria." });
       return;
     }
     const randomSkip = Math.floor(Math.random() * count);
@@ -86,7 +97,7 @@ export async function getRandomQuestion(
 export async function getQuestion(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const question = await Question.findById(req.params.id).lean();
@@ -104,13 +115,15 @@ export async function getQuestion(
 export async function createQuestion(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { taskType, category, text, imageUrl, source } = req.body;
 
     if (!text || !taskType || !source) {
-      res.status(400).json({ message: "taskType, text, and source are required." });
+      res
+        .status(400)
+        .json({ message: "taskType, text, and source are required." });
       return;
     }
 

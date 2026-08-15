@@ -1,5 +1,13 @@
 import request from "supertest";
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
 import { app } from "../src/app.js";
 import { clearDb, startDb, stopDb, seedEssay, TEST_USER } from "./helpers.js";
 import { EssayStatus } from "../src/models/essay.model.js";
@@ -22,11 +30,21 @@ const mockDailyComment = vi.mocked(generateDailyComment);
 async function authed(): Promise<void> {
   getSession.mockResolvedValue({
     user: TEST_USER,
-    session: { id: "sess-1", userId: TEST_USER.id, expiresAt: new Date(), createdAt: new Date(), updatedAt: new Date() },
+    session: {
+      id: "sess-1",
+      userId: TEST_USER.id,
+      expiresAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   } as never);
 }
 
-function evaluated(band: number, date: string, overrides: Record<string, unknown> = {}) {
+function evaluated(
+  band: number,
+  date: string,
+  overrides: Record<string, unknown> = {},
+) {
   return seedEssay({
     status: EssayStatus.Evaluated,
     createdAt: new Date(date),
@@ -64,7 +82,10 @@ describe("GET /api/analytics", () => {
     });
     await seedEssay(); // in_progress draft
 
-    mockDailyComment.mockResolvedValue({ text: "AI comment", tone: "positive" });
+    mockDailyComment.mockResolvedValue({
+      text: "AI comment",
+      tone: "positive",
+    });
 
     const res = await request(app)
       .get("/api/analytics")
@@ -85,16 +106,23 @@ describe("GET /api/analytics", () => {
     expect(res.body.trend[0].band).toBe(6.5); // oldest first
 
     expect(res.body.improvements).toHaveLength(1);
-    expect(res.body.improvements[0].originalId.toString()).toBe(original._id.toString());
-    expect(res.body.improvements[0].reworkId.toString()).toBe(rework._id.toString());
+    expect(res.body.improvements[0].originalId.toString()).toBe(
+      original._id.toString(),
+    );
+    expect(res.body.improvements[0].reworkId.toString()).toBe(
+      rework._id.toString(),
+    );
     expect(res.body.improvements[0].delta).toBe(0.5);
 
     expect(mockDailyComment).toHaveBeenCalledWith(
       expect.objectContaining({ averageBand: 6.8 }),
       expect.objectContaining({ ta: 6.8 }),
-      { apiKey: "k", provider: "gemini" }
+      { apiKey: "k", provider: "gemini" },
     );
-    expect(res.body.dailyComment).toEqual({ text: "AI comment", tone: "positive" });
+    expect(res.body.dailyComment).toEqual({
+      text: "AI comment",
+      tone: "positive",
+    });
   });
 
   it("falls back to a static comment when no key is sent", async () => {

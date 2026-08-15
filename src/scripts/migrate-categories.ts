@@ -18,14 +18,18 @@ async function run(): Promise<void> {
   for (const q of questions) {
     const newCategory = detectCategory(q.text, q.taskType as "task1" | "task2");
     if (newCategory && newCategory !== q.category) {
-      console.log(`Updating "${q.text.slice(0, 50)}...": "${q.category}" -> "${newCategory}"`);
+      console.log(
+        `Updating "${q.text.slice(0, 50)}...": "${q.category}" -> "${newCategory}"`,
+      );
       q.category = newCategory;
       await q.save();
       updatedCount++;
     }
   }
 
-  console.log(`Category reclassification completed. ${updatedCount} questions updated.`);
+  console.log(
+    `Category reclassification completed. ${updatedCount} questions updated.`,
+  );
   await mongoose.disconnect();
 }
 

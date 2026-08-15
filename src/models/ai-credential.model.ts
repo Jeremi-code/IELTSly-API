@@ -49,10 +49,10 @@ const aiCredentialSchema = new Schema<IAiCredential>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const AiCredential = mongoose.model<IAiCredential>(
   "AiCredential",
-  aiCredentialSchema
+  aiCredentialSchema,
 );

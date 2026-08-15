@@ -11,7 +11,7 @@ import { AuthRequest } from "../types/express.types.js";
 export const authenticate = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const session = await auth.api.getSession({

@@ -20,7 +20,10 @@ const DEFAULT_SOURCES = [
 function getSourceUrls(): string[] {
   const envSources = process.env.SCRAPE_SOURCES;
   if (envSources) {
-    return envSources.split(",").map((s) => s.trim()).filter(Boolean);
+    return envSources
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return DEFAULT_SOURCES;
 }
@@ -46,7 +49,10 @@ export async function scrapeQuestions(): Promise<{
     for (const url of sourceUrls) {
       try {
         const page = await browser.newPage();
-        await page.goto(url, { timeout: 30_000, waitUntil: "domcontentloaded" });
+        await page.goto(url, {
+          timeout: 30_000,
+          waitUntil: "domcontentloaded",
+        });
 
         // Extract page text content for LLM processing.
         const pageContent = await page.evaluate(() => document.body.innerText);
@@ -240,7 +246,7 @@ const TASK2_CATEGORY_RULES: { category: string; patterns: RegExp[] }[] = [
  */
 export function detectCategory(
   text: string,
-  taskType?: "task1" | "task2"
+  taskType?: "task1" | "task2",
 ): string | undefined {
   if (taskType === "task1") {
     for (const rule of TASK1_CATEGORY_RULES) {
@@ -281,7 +287,7 @@ export function detectCategory(
 // on page text to find IELTS-style question prompts.
 export function extractQuestionsFromText(
   text: string,
-  _sourceUrl: string
+  _sourceUrl: string,
 ): ExtractedQuestion[] {
   const questions: ExtractedQuestion[] = [];
   // Split by common IELTS question patterns.
@@ -297,7 +303,9 @@ export function extractQuestionsFromText(
 
     if (
       /\btask 1\b/i.test(trimmed) ||
-      /\b(graph|chart|diagram|table|map|plan|flowchart|illustration)s?\b/i.test(trimmed) ||
+      /\b(graph|chart|diagram|table|map|plan|flowchart|illustration)s?\b/i.test(
+        trimmed,
+      ) ||
       /\bsummarise the information\b/i.test(trimmed) ||
       /\bselect(ing)? and report(ing)? the main features\b/i.test(trimmed)
     ) {
@@ -307,16 +315,21 @@ export function extractQuestionsFromText(
       /\bto what extent\b/i.test(trimmed) ||
       /\b(agree or disagree|do you agree|agree with)\b/i.test(trimmed) ||
       /\bdiscuss both (views|sides|arguments)\b/i.test(trimmed) ||
-      /\b(advantages? and disadvantages?|benefits? and drawbacks?|pros and cons)\b/i.test(trimmed) ||
+      /\b(advantages? and disadvantages?|benefits? and drawbacks?|pros and cons)\b/i.test(
+        trimmed,
+      ) ||
       /\b(positive or negative|negative or positive)\b/i.test(trimmed) ||
-      /\b(causes? and solutions?|problems? and solutions?|what are the causes|what causes|what solutions|how can this be solved|what can be done)\b/i.test(trimmed) ||
+      /\b(causes? and solutions?|problems? and solutions?|what are the causes|what causes|what solutions|how can this be solved|what can be done)\b/i.test(
+        trimmed,
+      ) ||
       /\bgive reasons for your answer\b/i.test(trimmed) ||
-      /\b(write an essay|in your opinion|what is your view|what are your views)\b/i.test(trimmed) ||
+      /\b(write an essay|in your opinion|what is your view|what are your views)\b/i.test(
+        trimmed,
+      ) ||
       /\bwhy (is|do|are).*\?.*\?/is.test(trimmed)
     ) {
       taskType = "task2";
     }
-
 
     if (!taskType) continue;
 
@@ -328,4 +341,3 @@ export function extractQuestionsFromText(
 
   return questions;
 }
-

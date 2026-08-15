@@ -18,7 +18,7 @@ export async function stopDb(): Promise<void> {
 
 export async function clearDb(): Promise<void> {
   await Promise.all(
-    Object.values(mongoose.connection.collections).map((c) => c.deleteMany({}))
+    Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})),
   );
 }
 
@@ -41,7 +41,7 @@ export const OTHER_USER = {
 };
 
 export async function seedEssay(
-  overrides: Partial<IEssay> & Record<string, unknown> = {}
+  overrides: Partial<IEssay> & Record<string, unknown> = {},
 ): Promise<InstanceType<typeof Essay>> {
   return Essay.create({
     user: TEST_USER.id,

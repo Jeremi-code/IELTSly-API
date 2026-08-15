@@ -8,7 +8,6 @@
     "seed": "tsx src/scripts/seed.ts",
     "migrate:categories": "tsx src/scripts/migrate-categories.ts"
   },
-
   "type": "module",
   "dependencies": {
     "@ai-sdk/google": "^4.0.39",
