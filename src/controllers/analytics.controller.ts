@@ -1,15 +1,12 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
-import { generateDailyComment } from "../services/evaluation.service.js";
-import { round1dp, buildStaticComment } from "../utils/analytics.utils.js";
-import { getDecryptedCredentials } from "../services/credential.service.js";
+import { round1dp, buildDiagnosticComment } from "../utils/analytics.utils.js";
 import type {
   AnalyticsStats,
   CriteriaAverages,
   TrendPoint,
   Improvement,
-  DailyComment,
 } from "../types/analytics.types.js";
 
 // ── GET /api/analytics ──────────────────────────────────────────────
@@ -60,6 +57,18 @@ export async function getAnalytics(
       },
     ]);
 
+    // ── Word count and duration averages ──────────────────────────
+    const [performanceResult] = await Essay.aggregate([
+      { $match: { user: userId, status: EssayStatus.Evaluated } },
+      {
+        $group: {
+          _id: null,
+          avgWordCount: { $avg: "$wordCount" },
+          avgDurationSec: { $avg: "$durationSec" },
+        },
+      },
+    ]);
+
     const stats: AnalyticsStats = {
       totalAttempts: statsResult?.totalAttempts ?? 0,
       evaluatedCount: statsResult?.evaluatedCount ?? 0,
@@ -68,6 +77,12 @@ export async function getAnalytics(
       bestBand: statsResult?.bestBand ?? 0,
       task1Average: 0,
       task2Average: 0,
+      avgWordCount: performanceResult?.avgWordCount
+        ? Math.round(performanceResult.avgWordCount)
+        : 0,
+      avgDurationSec: performanceResult?.avgDurationSec
+        ? Math.round(performanceResult.avgDurationSec)
+        : 0,
     };
 
     // ── Per-task averages ─────────────────────────────────────────
@@ -117,6 +132,32 @@ export async function getAnalytics(
       type: doc.type,
     }));
 
+    // ── Recent examiner tips (collected from the last 6 evaluations) ──
+    const recentEvaluations = await Essay.find({
+      user: userId,
+      status: EssayStatus.Evaluated,
+      "evaluation.tips": { $exists: true, $not: { $size: 0 } },
+    })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .select("evaluation.tips")
+      .lean();
+
+    const recentTips: string[] = [];
+    for (const item of recentEvaluations) {
+      if (Array.isArray(item.evaluation?.tips)) {
+        for (const tip of item.evaluation.tips) {
+          if (
+            tip &&
+            typeof tip === "string" &&
+            !recentTips.includes(tip.trim())
+          ) {
+            recentTips.push(tip.trim());
+          }
+        }
+      }
+    }
+
     // ── Rework improvements ───────────────────────────────────────
     const reworks = await Essay.find({
       user: userId,
@@ -149,42 +190,17 @@ export async function getAnalytics(
       }
     }
 
-    // ── Daily comment (AI-generated from user's encrypted key or headers or static fallback) ──
-    let dailyComment: DailyComment;
-    try {
-      let credentials = await getDecryptedCredentials(userId);
-      if (!credentials) {
-        const headerKey = (req.headers["x-api-key"] as string) || undefined;
-        const headerProvider =
-          (req.headers["x-ai-provider"] as string) || undefined;
-        const headerModel = (req.headers["x-ai-model"] as string) || undefined;
+    // ── Diagnostic coach comment ───────────────────────────────────
+    const dailyComment = buildDiagnosticComment(stats, criteriaAverages);
 
-        if (
-          headerKey &&
-          (headerProvider === "gemini" || headerProvider === "openai")
-        ) {
-          credentials = {
-            apiKey: headerKey,
-            provider: headerProvider,
-            model: headerModel,
-          };
-        }
-      }
-
-      if (credentials) {
-        dailyComment = await generateDailyComment(
-          stats,
-          criteriaAverages,
-          credentials,
-        );
-      } else {
-        dailyComment = buildStaticComment(stats);
-      }
-    } catch {
-      dailyComment = buildStaticComment(stats);
-    }
-
-    res.json({ stats, criteriaAverages, trend, improvements, dailyComment });
+    res.json({
+      stats,
+      criteriaAverages,
+      trend,
+      improvements,
+      dailyComment,
+      recentTips: recentTips.slice(0, 6),
+    });
   } catch (err) {
     next(err);
   }
