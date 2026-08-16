@@ -75,28 +75,77 @@ export async function listEssays(
 ): Promise<void> {
   try {
     const userId = req.user!.id;
-    const { type, status, mode } = req.query;
+    const {
+      type,
+      status,
+      mode,
+      search,
+      scoreFilter,
+      minBand,
+      maxBand,
+      sortBy,
+    } = req.query;
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(
-      50,
+      100,
       Math.max(1, parseInt(req.query.limit as string) || 10),
     );
 
     const filter: Record<string, unknown> = { user: userId };
-    if (type) filter.type = type;
-    if (status) filter.status = status;
-    if (mode) filter.mode = mode;
+    if (type && type !== "all") filter.type = type;
+    if (status && status !== "all") filter.status = status;
+    if (mode && mode !== "all") filter.mode = mode;
+
+    // Band score filtering
+    if (scoreFilter === "band7_plus") {
+      filter["evaluation.overallBand"] = { $gte: 7.0 };
+    } else if (scoreFilter === "band6_to_7") {
+      filter["evaluation.overallBand"] = { $gte: 6.0, $lt: 7.0 };
+    } else if (scoreFilter === "under_6") {
+      filter["evaluation.overallBand"] = { $lt: 6.0, $gt: 0 };
+    } else if (minBand !== undefined || maxBand !== undefined) {
+      const bandRange: Record<string, number> = {};
+      if (minBand !== undefined) bandRange.$gte = parseFloat(minBand as string);
+      if (maxBand !== undefined) bandRange.$lte = parseFloat(maxBand as string);
+      filter["evaluation.overallBand"] = bandRange;
+    }
+
+    // Search query filtering across prompt, category, and feedback
+    if (search && typeof search === "string" && search.trim()) {
+      const queryStr = search.trim();
+      const searchRegex = { $regex: queryStr, $options: "i" };
+      filter.$or = [
+        { "question.text": searchRegex },
+        { "question.category": searchRegex },
+        { "evaluation.feedback": searchRegex },
+      ];
+    }
+
+    // Sorting definition
+    let sortObj: Record<string, 1 | -1> = { createdAt: -1 };
+    if (sortBy === "oldest") {
+      sortObj = { createdAt: 1 };
+    } else if (sortBy === "highest") {
+      sortObj = { "evaluation.overallBand": -1, createdAt: -1 };
+    } else if (sortBy === "lowest") {
+      sortObj = { "evaluation.overallBand": 1, createdAt: -1 };
+    } else if (sortBy === "words") {
+      sortObj = { wordCount: -1, createdAt: -1 };
+    }
 
     const [essays, total] = await Promise.all([
       Essay.find(filter)
-        .sort({ createdAt: -1 })
+        .sort(sortObj)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
       Essay.countDocuments(filter),
     ]);
 
-    res.json({ essays, page, limit, total });
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    res.json({ essays, page, limit, total, totalPages });
   } catch (err) {
     next(err);
   }
