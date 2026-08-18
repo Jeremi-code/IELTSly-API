@@ -1,12 +1,17 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
-import { round1dp, buildDiagnosticComment } from "../utils/analytics.utils.js";
+import {
+  round1dp,
+  buildDiagnosticComment,
+  calculateStreakAndStats,
+} from "../utils/analytics.utils.js";
 import type {
   AnalyticsStats,
   CriteriaAverages,
   TrendPoint,
   Improvement,
+  ActivitySummary,
 } from "../types/analytics.types.js";
 
 // ── GET /api/analytics ──────────────────────────────────────────────
@@ -190,6 +195,74 @@ export async function getAnalytics(
       }
     }
 
+    // ── Daily activity & streak aggregation ───────────────────────
+    const dailyActivitiesRaw = await Essay.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+          },
+          count: { $sum: 1 },
+          durationSec: { $sum: { $ifNull: ["$durationSec", 0] } },
+          wordCount: { $sum: { $ifNull: ["$wordCount", 0] } },
+          bandSum: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$status", EssayStatus.Evaluated] },
+                    { $ne: ["$evaluation.overallBand", null] },
+                  ],
+                },
+                "$evaluation.overallBand",
+                0,
+              ],
+            },
+          },
+          bandCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$status", EssayStatus.Evaluated] },
+                    { $ne: ["$evaluation.overallBand", null] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const activitiesMap: Record<
+      string,
+      {
+        count: number;
+        durationSec: number;
+        wordCount: number;
+        bandSum: number;
+        bandCount: number;
+      }
+    > = {};
+
+    for (const item of dailyActivitiesRaw) {
+      if (item._id) {
+        activitiesMap[item._id] = {
+          count: item.count || 0,
+          durationSec: item.durationSec || 0,
+          wordCount: item.wordCount || 0,
+          bandSum: item.bandSum || 0,
+          bandCount: item.bandCount || 0,
+        };
+      }
+    }
+
+    const activitySummary = calculateStreakAndStats(activitiesMap);
+
     // ── Diagnostic coach comment ───────────────────────────────────
     const dailyComment = buildDiagnosticComment(stats, criteriaAverages);
 
@@ -200,7 +273,88 @@ export async function getAnalytics(
       improvements,
       dailyComment,
       recentTips: recentTips.slice(0, 6),
+      activitySummary,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── GET /api/analytics/activity ─────────────────────────────────────
+export async function getActivitySummary(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const dailyActivitiesRaw = await Essay.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+          },
+          count: { $sum: 1 },
+          durationSec: { $sum: { $ifNull: ["$durationSec", 0] } },
+          wordCount: { $sum: { $ifNull: ["$wordCount", 0] } },
+          bandSum: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$status", EssayStatus.Evaluated] },
+                    { $ne: ["$evaluation.overallBand", null] },
+                  ],
+                },
+                "$evaluation.overallBand",
+                0,
+              ],
+            },
+          },
+          bandCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$status", EssayStatus.Evaluated] },
+                    { $ne: ["$evaluation.overallBand", null] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const activitiesMap: Record<
+      string,
+      {
+        count: number;
+        durationSec: number;
+        wordCount: number;
+        bandSum: number;
+        bandCount: number;
+      }
+    > = {};
+
+    for (const item of dailyActivitiesRaw) {
+      if (item._id) {
+        activitiesMap[item._id] = {
+          count: item.count || 0,
+          durationSec: item.durationSec || 0,
+          wordCount: item.wordCount || 0,
+          bandSum: item.bandSum || 0,
+          bandCount: item.bandCount || 0,
+        };
+      }
+    }
+
+    const activitySummary = calculateStreakAndStats(activitiesMap);
+    res.json(activitySummary);
   } catch (err) {
     next(err);
   }

@@ -60,3 +60,110 @@ export function buildDiagnosticComment(
     tone: "push",
   };
 }
+
+export function calculateStreakAndStats(
+  activitiesMap: Record<
+    string,
+    {
+      count: number;
+      durationSec: number;
+      wordCount: number;
+      bandSum: number;
+      bandCount: number;
+    }
+  >,
+) {
+  const dates = Object.keys(activitiesMap).sort();
+  if (dates.length === 0) {
+    return {
+      activities: [],
+      currentStreak: 0,
+      longestStreak: 0,
+      totalActiveDays: 0,
+      totalDurationSec: 0,
+      totalEssays: 0,
+    };
+  }
+
+  const activities = dates.map((d) => {
+    const item = activitiesMap[d];
+    return {
+      date: d,
+      count: item.count,
+      durationSec: item.durationSec,
+      wordCount: item.wordCount,
+      avgBand:
+        item.bandCount > 0 ? round1dp(item.bandSum / item.bandCount) : null,
+    };
+  });
+
+  const totalActiveDays = dates.length;
+  const totalDurationSec = activities.reduce(
+    (acc, a) => acc + a.durationSec,
+    0,
+  );
+  const totalEssays = activities.reduce((acc, a) => acc + a.count, 0);
+
+  // Longest streak calculation
+  let longestStreak = 0;
+  let currentRun = 0;
+  let prevDate: Date | null = null;
+
+  for (const dateStr of dates) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const currentDate = new Date(Date.UTC(y, m - 1, d));
+
+    if (!prevDate) {
+      currentRun = 1;
+    } else {
+      const diffMs = currentDate.getTime() - prevDate.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        currentRun += 1;
+      } else if (diffDays > 1) {
+        currentRun = 1;
+      }
+    }
+    prevDate = currentDate;
+    if (currentRun > longestStreak) {
+      longestStreak = currentRun;
+    }
+  }
+
+  // Current streak calculation (relative to today in UTC)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [ty, tm, td] = todayStr.split("-").map(Number);
+  const todayUtc = new Date(Date.UTC(ty, tm - 1, td));
+  const yesterdayUtc = new Date(todayUtc.getTime() - 86400000);
+  const yesterdayStr = yesterdayUtc.toISOString().slice(0, 10);
+
+  let currentStreak = 0;
+  const dateSet = new Set(dates);
+
+  let checkDate = dateSet.has(todayStr)
+    ? todayUtc
+    : dateSet.has(yesterdayStr)
+      ? yesterdayUtc
+      : null;
+
+  if (checkDate) {
+    while (true) {
+      const checkStr = checkDate.toISOString().slice(0, 10);
+      if (dateSet.has(checkStr)) {
+        currentStreak += 1;
+        checkDate = new Date(checkDate.getTime() - 86400000);
+      } else {
+        break;
+      }
+    }
+  }
+
+  return {
+    activities,
+    currentStreak,
+    longestStreak,
+    totalActiveDays,
+    totalDurationSec,
+    totalEssays,
+  };
+}
