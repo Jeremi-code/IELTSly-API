@@ -5,7 +5,6 @@ export interface IUserTarget {
   examDate?: Date | null;
   targetBand?: number;
   examType?: "academic" | "general";
-  notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,11 +31,6 @@ const userTargetSchema = new Schema<IUserTarget>(
       type: String,
       enum: ["academic", "general"],
       default: "academic",
-    },
-    notes: {
-      type: String,
-      trim: true,
-      maxlength: 500,
     },
   },
   {

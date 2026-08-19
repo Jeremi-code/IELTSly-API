@@ -105,7 +105,6 @@ export async function getUserTarget(
         examDate: null,
         targetBand: 7.5,
         examType: "academic",
-        notes: "",
       });
       return;
     }
@@ -113,7 +112,6 @@ export async function getUserTarget(
       examDate: target.examDate ? target.examDate.toISOString() : null,
       targetBand: target.targetBand ?? 7.5,
       examType: target.examType ?? "academic",
-      notes: target.notes ?? "",
       updatedAt: target.updatedAt,
     });
   } catch (err) {
@@ -128,7 +126,7 @@ export async function saveUserTarget(
 ): Promise<void> {
   try {
     const userId = req.user!.id;
-    const { examDate, targetBand, examType, notes } = req.body;
+    const { examDate, targetBand, examType } = req.body;
 
     let parsedDate: Date | null = null;
     if (examDate) {
@@ -159,7 +157,6 @@ export async function saveUserTarget(
         examDate: parsedDate,
         targetBand: parsedBand,
         examType: type,
-        notes: typeof notes === "string" ? notes.slice(0, 500) : "",
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
@@ -168,7 +165,6 @@ export async function saveUserTarget(
       examDate: target.examDate ? target.examDate.toISOString() : null,
       targetBand: target.targetBand ?? 7.5,
       examType: target.examType ?? "academic",
-      notes: target.notes ?? "",
       updatedAt: target.updatedAt,
     });
   } catch (err) {
