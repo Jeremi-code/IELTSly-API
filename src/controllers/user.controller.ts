@@ -5,6 +5,7 @@ import {
   saveUserCredentials,
   deleteUserCredentials,
 } from "../services/credential.service.js";
+import { UserTarget } from "../models/user-target.model.js";
 import type { AIProvider } from "../types/ai.types.js";
 
 export async function getAICredentials(
@@ -90,3 +91,102 @@ export async function deleteAICredentials(
     next(err);
   }
 }
+
+export async function getUserTarget(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const target = await UserTarget.findOne({ userId });
+    if (!target) {
+      res.json({
+        examDate: null,
+        targetBand: 7.5,
+        examType: "academic",
+        notes: "",
+      });
+      return;
+    }
+    res.json({
+      examDate: target.examDate ? target.examDate.toISOString() : null,
+      targetBand: target.targetBand ?? 7.5,
+      examType: target.examType ?? "academic",
+      notes: target.notes ?? "",
+      updatedAt: target.updatedAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function saveUserTarget(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const { examDate, targetBand, examType, notes } = req.body;
+
+    let parsedDate: Date | null = null;
+    if (examDate) {
+      parsedDate = new Date(examDate);
+      if (isNaN(parsedDate.getTime())) {
+        res.status(400).json({ message: "Invalid exam date format." });
+        return;
+      }
+    }
+
+    let parsedBand = 7.5;
+    if (typeof targetBand === "number") {
+      if (targetBand < 0 || targetBand > 9) {
+        res.status(400).json({
+          message: "Target band must be between 0 and 9.0",
+        });
+        return;
+      }
+      parsedBand = targetBand;
+    }
+
+    const type = examType === "general" ? "general" : "academic";
+
+    const target = await UserTarget.findOneAndUpdate(
+      { userId },
+      {
+        userId,
+        examDate: parsedDate,
+        targetBand: parsedBand,
+        examType: type,
+        notes: typeof notes === "string" ? notes.slice(0, 500) : "",
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    res.json({
+      examDate: target.examDate ? target.examDate.toISOString() : null,
+      targetBand: target.targetBand ?? 7.5,
+      examType: target.examType ?? "academic",
+      notes: target.notes ?? "",
+      updatedAt: target.updatedAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUserTarget(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    await UserTarget.findOneAndDelete({ userId });
+    res.json({ success: true, message: "Target exam date cleared." });
+  } catch (err) {
+    next(err);
+  }
+}
+
