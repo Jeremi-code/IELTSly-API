@@ -5,8 +5,9 @@ import { AuthRequest } from "../types/express.types.js";
 
 /**
  * Authentication middleware using Better Auth session validation.
- * Validates the session cookie set by Better Auth and attaches
- * the user and session objects to the request.
+ * @param {AuthRequest} req Express request containing authorization headers
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
  */
 export const authenticate = async (
   req: AuthRequest,
@@ -25,7 +26,7 @@ export const authenticate = async (
       return;
     }
   } catch (error) {
-    // Session validation failed
+    // Handled below by returning 401
   }
 
   res.status(401).json({ message: "Unauthorized — no valid session" });

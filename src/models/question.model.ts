@@ -2,7 +2,6 @@ import { Schema, model, type InferSchemaType } from "mongoose";
 import { computeTextHash } from "../utils/text.utils.js";
 export { computeTextHash };
 
-// ── Enum constants ──────────────────────────────────────────────────
 export const QuestionSource = {
   Official: "official",
   Scraped: "scraped",
@@ -39,7 +38,6 @@ export type Task2CategoryType =
 export type QuestionCategoryType =
   (typeof QuestionCategory)[keyof typeof QuestionCategory];
 
-// ── Schema ──────────────────────────────────────────────────────────
 const questionSchema = new Schema(
   {
     taskType: {
@@ -57,8 +55,6 @@ const questionSchema = new Schema(
     },
     sourceUrl: { type: String },
     timesUsed: { type: Number, required: true, default: 0 },
-
-    // SHA-1 hash of normalized text — used for deduplication.
     textHash: { type: String, required: true },
   },
   {
@@ -67,11 +63,9 @@ const questionSchema = new Schema(
   },
 );
 
-// ── Indexes ─────────────────────────────────────────────────────────
 questionSchema.index({ textHash: 1 }, { unique: true });
 questionSchema.index({ taskType: 1 });
 questionSchema.index({ category: 1 });
 
-// ── Exports ─────────────────────────────────────────────────────────
 export type IQuestion = InferSchemaType<typeof questionSchema>;
 export const Question = model("question", questionSchema);
