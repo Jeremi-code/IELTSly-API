@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { Question } from "../models/question.model.js";
-import { detectCategory } from "../services/scraper.service.js";
+import { detectCategory } from "../utils/scraper.utils.js";
 
 dotenv.config();
 
