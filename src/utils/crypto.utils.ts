@@ -3,6 +3,10 @@ import crypto from "crypto";
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 
+/**
+ * Derives a 256-bit encryption key from application secrets.
+ * @returns {Buffer} SHA-256 derived key buffer
+ */
 function getEncryptionKey(): Buffer {
   const secret =
     process.env.ENCRYPTION_KEY ||
@@ -17,6 +21,11 @@ export interface EncryptedPayload {
   authTag: string;
 }
 
+/**
+ * Encrypts sensitive string data using AES-256-GCM.
+ * @param {string} text Plaintext input to encrypt
+ * @returns {EncryptedPayload} Encrypted payload object containing ciphertext, IV, and auth tag
+ */
 export function encrypt(text: string): EncryptedPayload {
   const key = getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -33,6 +42,11 @@ export function encrypt(text: string): EncryptedPayload {
   };
 }
 
+/**
+ * Decrypts an AES-256-GCM payload back to plaintext.
+ * @param {EncryptedPayload} payload Ciphertext, IV, and auth tag
+ * @returns {string} Decrypted plaintext string
+ */
 export function decrypt(payload: EncryptedPayload): string {
   const key = getEncryptionKey();
   const iv = Buffer.from(payload.iv, "hex");
@@ -46,6 +60,11 @@ export function decrypt(payload: EncryptedPayload): string {
   return decrypted;
 }
 
+/**
+ * Returns a masked representation of an API key for display.
+ * @param {string} key Plaintext API key
+ * @returns {string} Masked string with visible prefix and suffix
+ */
 export function maskApiKey(key: string): string {
   if (!key || key.length < 8) return "••••••••";
   const start = key.slice(0, 4);

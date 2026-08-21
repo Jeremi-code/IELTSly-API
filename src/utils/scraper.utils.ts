@@ -1,12 +1,6 @@
 import { Task1Category, Task2Category } from "../models/question.model.js";
 import type { ExtractedQuestion } from "../zod/question.schema.js";
 
-// ── IELTS Question Category Detection ────────────────────────────────
-// Classifies IELTS prompts into standard exam question types:
-// Task 1: Bar Chart, Line Graph, Pie Chart, Table, Map, Process Diagram, Multiple Charts
-// Task 2: Agree / Disagree, Discuss Both Views, Advantages & Disadvantages,
-//         Causes & Solutions, Direct / Two-Part Question, Positive / Negative Development
-
 const TASK1_CATEGORY_RULES: { category: string; patterns: RegExp[] }[] = [
   {
     category: Task1Category.MultipleCharts,
@@ -136,6 +130,9 @@ const TASK2_CATEGORY_RULES: { category: string; patterns: RegExp[] }[] = [
 
 /**
  * Classifies an IELTS question text into its standard question format category.
+ * @param {string} text Prompt text string
+ * @param {"task1" | "task2"} [taskType] IELTS Task type
+ * @returns {string | undefined} Detected category name or undefined
  */
 export function detectCategory(
   text: string,
@@ -175,6 +172,9 @@ export function detectCategory(
 
 /**
  * Parses raw scraped page text to find IELTS-style question prompts.
+ * @param {string} text Raw page text
+ * @param {string} _sourceUrl Source page URL
+ * @returns {ExtractedQuestion[]} List of extracted prompt objects
  */
 export function extractQuestionsFromText(
   text: string,

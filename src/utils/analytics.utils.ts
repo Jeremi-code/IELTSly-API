@@ -4,10 +4,21 @@ import type {
   DailyComment,
 } from "../types/analytics.types.js";
 
+/**
+ * Rounds a number to one decimal place.
+ * @param {number} n Input number
+ * @returns {number} Rounded number
+ */
 export function round1dp(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
+/**
+ * Builds a diagnostic study guidance comment based on criteria performance.
+ * @param {Pick<AnalyticsStats, "averageBand" | "evaluatedCount">} stats Analytics stats
+ * @param {CriteriaAverages} [criteriaAverages] Per-criteria average band scores
+ * @returns {DailyComment} Diagnostic comment object
+ */
 export function buildDiagnosticComment(
   stats: Pick<AnalyticsStats, "averageBand" | "evaluatedCount">,
   criteriaAverages?: CriteriaAverages,
@@ -61,6 +72,11 @@ export function buildDiagnosticComment(
   };
 }
 
+/**
+ * Calculates active study days, streak counts, and aggregate duration.
+ * @param {Record<string, { count: number; durationSec: number; wordCount: number; bandSum: number; bandCount: number }>} activitiesMap Daily activity dictionary
+ * @returns Activity matrix summary object
+ */
 export function calculateStreakAndStats(
   activitiesMap: Record<
     string,
@@ -104,7 +120,6 @@ export function calculateStreakAndStats(
   );
   const totalEssays = activities.reduce((acc, a) => acc + a.count, 0);
 
-  // Longest streak calculation
   let longestStreak = 0;
   let currentRun = 0;
   let prevDate: Date | null = null;
@@ -130,7 +145,6 @@ export function calculateStreakAndStats(
     }
   }
 
-  // Current streak calculation (relative to today in UTC)
   const todayStr = new Date().toISOString().slice(0, 10);
   const [ty, tm, td] = todayStr.split("-").map(Number);
   const todayUtc = new Date(Date.UTC(ty, tm - 1, td));

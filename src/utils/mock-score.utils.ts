@@ -1,8 +1,11 @@
 /**
- * Utility functions for IELTS Mock Scores and Band calculations
+ * Calculates official IELTS overall band score from 4 module scores according to official rounding rules.
+ * @param {number} listening Listening band score
+ * @param {number} reading Reading band score
+ * @param {number} writing Writing band score
+ * @param {number} speaking Speaking band score
+ * @returns {number} Rounded overall band score
  */
-
-// Calculate official IELTS overall band score from 4 module scores
 export function calculateOverallBand(
   listening: number,
   reading: number,
@@ -22,7 +25,12 @@ export function calculateOverallBand(
   }
 }
 
-// Convert raw correct count (out of 40) for Listening / Reading to Band Score
+/**
+ * Converts raw correct question count (out of 40) for Listening or Reading to IELTS Band Score.
+ * @param {number} raw Number of correct answers out of 40
+ * @param {"listening" | "reading"} module Module type
+ * @returns {number} IELTS Band score (2.0 to 9.0)
+ */
 export function rawToBand(raw: number, module: "listening" | "reading"): number {
   if (raw >= 39) return 9.0;
   if (raw >= 37) return 8.5;
