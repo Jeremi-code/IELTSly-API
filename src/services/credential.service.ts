@@ -9,6 +9,11 @@ export interface AICredentialStatusResponse {
   model?: string;
 }
 
+/**
+ * Retrieves the connection status and masked key of user AI credentials.
+ * @param {string} userId User ID string
+ * @returns {Promise<AICredentialStatusResponse>} Connection status payload
+ */
 export async function getUserCredentialStatus(
   userId: string,
 ): Promise<AICredentialStatusResponse> {
@@ -24,6 +29,11 @@ export async function getUserCredentialStatus(
   };
 }
 
+/**
+ * Decrypts stored AI credentials for a given user.
+ * @param {string} userId User ID string
+ * @returns {Promise<AICredentials | null>} Decrypted credentials or null
+ */
 export async function getDecryptedCredentials(
   userId: string,
 ): Promise<AICredentials | null> {
@@ -50,6 +60,12 @@ export async function getDecryptedCredentials(
   }
 }
 
+/**
+ * Encrypts and stores user AI provider API keys.
+ * @param {string} userId User ID string
+ * @param {{ provider: AIProvider; apiKey: string; model?: string }} data Credentials payload
+ * @returns {Promise<AICredentialStatusResponse>} Updated status response
+ */
 export async function saveUserCredentials(
   userId: string,
   data: { provider: AIProvider; apiKey: string; model?: string },
@@ -78,6 +94,11 @@ export async function saveUserCredentials(
   };
 }
 
+/**
+ * Deletes stored AI credentials for a user.
+ * @param {string} userId User ID string
+ * @returns {Promise<{ isConnected: boolean }>} Disconnected status response
+ */
 export async function deleteUserCredentials(
   userId: string,
 ): Promise<{ isConnected: boolean }> {

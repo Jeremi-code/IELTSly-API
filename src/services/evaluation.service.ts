@@ -17,8 +17,11 @@ const DEFAULT_MODELS: Record<EvaluateInput["provider"], string> = {
   openai: "gpt-4o-mini",
 };
 
-// ── Resolve which AI model to use ───────────────────────────────────
-// Users always bring their own key (Gemini or OpenAI). No server-side key.
+/**
+ * Resolves the appropriate AI model SDK instance based on user provider settings.
+ * @param {AICredentials} credentials User AI credentials
+ * @returns Model instance
+ */
 function resolveModel({ apiKey, provider, model }: AICredentials) {
   const modelName = model?.trim() || DEFAULT_MODELS[provider];
 
@@ -31,7 +34,11 @@ function resolveModel({ apiKey, provider, model }: AICredentials) {
   return openai(modelName);
 }
 
-// ── Build IELTS examiner prompt ─────────────────────────────────────
+/**
+ * Constructs prompt instructions for the AI examiner evaluation.
+ * @param {EvaluateInput} input Evaluation input containing essay details
+ * @returns {string} Formatted prompt string
+ */
 function buildPrompt(input: EvaluateInput): string {
   const taskLabel = input.type === "task1" ? "Task 1" : "Task 2";
   const modeNote =
@@ -62,7 +69,11 @@ ${input.type === "task1" ? "For Task 1, emphasize accurate data description, key
 Provide 2–4 sentences of encouraging but specific feedback and 2–4 concrete, actionable improvement tips tied to the weakest criteria.`;
 }
 
-// ── Main evaluation function ────────────────────────────────────────
+/**
+ * Evaluates an essay response using AI against official IELTS criteria.
+ * @param {EvaluateInput} input Essay response data and API credentials
+ * @returns {Promise<EvaluationResult>} Structured evaluation band scores and feedback
+ */
 export async function evaluateEssay(
   input: EvaluateInput,
 ): Promise<EvaluationResult> {
@@ -79,13 +90,18 @@ export async function evaluateEssay(
   return object;
 }
 
-// ── Daily comment generation ────────────────────────────────────────
+/**
+ * Generates dynamic study guidance comments based on user performance analytics.
+ * @param {AnalyticsStats} stats Core analytics statistics
+ * @param {CriteriaAverages} criteriaAverages Average scores per criterion
+ * @param {AICredentials} [credentials] User AI credentials
+ * @returns {Promise<DailyComment>} Diagnostic coach feedback object
+ */
 export async function generateDailyComment(
   stats: AnalyticsStats,
   criteriaAverages: CriteriaAverages,
   credentials?: AICredentials,
 ): Promise<DailyComment> {
-  // Need at least one evaluated essay to generate a meaningful comment.
   if (stats.evaluatedCount === 0) {
     return {
       text: "Welcome to IELTSly! Submit your first essay to start tracking your progress.",
@@ -93,7 +109,6 @@ export async function generateDailyComment(
     };
   }
 
-  // No user credentials — throw so the caller falls back to a static comment.
   if (!credentials) {
     throw new Error("No AI credentials for daily comment.");
   }
@@ -109,14 +124,12 @@ export async function generateDailyComment(
     prompt: summary,
   });
 
-  // Parse tone from the last line.
   const lines = text.trim().split("\n");
   const lastLine = lines[lines.length - 1].trim().toUpperCase();
   let tone: DailyComment["tone"] = "neutral";
   if (lastLine.includes("POSITIVE")) tone = "positive";
   else if (lastLine.includes("PUSH")) tone = "push";
 
-  // Remove the tone tag line from the comment text.
   const commentText =
     lines.length > 1 ? lines.slice(0, -1).join("\n").trim() : text.trim();
 

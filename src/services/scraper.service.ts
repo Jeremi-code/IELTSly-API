@@ -2,18 +2,16 @@ import playwright from "playwright";
 const { chromium } = playwright;
 import { Question } from "../models/question.model.js";
 import { computeTextHash } from "../utils/text.utils.js";
-import { detectCategory, extractQuestionsFromText } from "../utils/scraper.utils.js";
-import {
-  extractedQuestionSchema,
-  type ExtractedQuestion,
-} from "../zod/question.schema.js";
-
-// ── Configuration ───────────────────────────────────────────────────
+import { extractQuestionsFromText } from "../utils/scraper.utils.js";
 
 const DEFAULT_SOURCES = [
   "https://ieltsonlinetests.com/collection/ielts-writing-recent-actual-tests",
 ];
 
+/**
+ * Returns source URLs configured for web scraping.
+ * @returns {string[]} List of target source URLs
+ */
 function getSourceUrls(): string[] {
   const envSources = process.env.SCRAPE_SOURCES;
   if (envSources) {
@@ -25,7 +23,10 @@ function getSourceUrls(): string[] {
   return DEFAULT_SOURCES;
 }
 
-// ── Main scraper function ───────────────────────────────────────────
+/**
+ * Scrapes target web pages for IELTS writing questions and adds unique entries to the question bank.
+ * @returns {Promise<{ added: number; duplicates: number; failed: number }>} Scrape results summary
+ */
 export async function scrapeQuestions(): Promise<{
   added: number;
   duplicates: number;
@@ -36,10 +37,9 @@ export async function scrapeQuestions(): Promise<{
   let duplicates = 0;
   let failed = 0;
 
-  // Track hashes within this batch run for intra-batch dedup.
   const seenHashes = new Set<string>();
-
   let browser;
+
   try {
     browser = await chromium.launch({ headless: true });
 
@@ -51,30 +51,22 @@ export async function scrapeQuestions(): Promise<{
           waitUntil: "domcontentloaded",
         });
 
-        // Extract page text content for LLM processing.
         const pageContent = await page.evaluate(() => document.body.innerText);
         await page.close();
 
-        // For now, use a simple heuristic extraction approach.
-        // In production, wire up llm-scraper with an LLM instance for
-        // structured extraction. This placeholder parses visible text blocks
-        // that look like IELTS prompts.
         const extracted = extractQuestionsFromText(pageContent, url);
 
         for (const q of extracted) {
-          // Validate: drop junk (text < 30 chars or missing taskType).
           if (!q.text || q.text.length < 30 || !q.taskType) continue;
 
           const textHash = computeTextHash(q.text);
 
-          // Intra-batch dedup.
           if (seenHashes.has(textHash)) {
             duplicates++;
             continue;
           }
           seenHashes.add(textHash);
 
-          // DB dedup.
           const existing = await Question.findOne({ textHash });
           if (existing) {
             duplicates++;
