@@ -4,11 +4,7 @@ import { Essay, EssayStatus } from "../models/essay.model.js";
 import { Question, computeTextHash } from "../models/question.model.js";
 import { evaluateEssay as runEvaluation } from "../services/evaluation.service.js";
 import { getDecryptedCredentials } from "../services/credential.service.js";
-
-// ── Helpers ─────────────────────────────────────────────────────────
-function wordCount(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
+import { wordCount } from "../utils/text.utils.js";
 
 // ── POST /api/essays ────────────────────────────────────────────────
 export async function createEssay(

@@ -1,5 +1,6 @@
 import { Schema, model, type InferSchemaType } from "mongoose";
-import { createHash } from "crypto";
+import { computeTextHash } from "../utils/text.utils.js";
+export { computeTextHash };
 
 // ── Enum constants ──────────────────────────────────────────────────
 export const QuestionSource = {
@@ -70,16 +71,6 @@ const questionSchema = new Schema(
 questionSchema.index({ textHash: 1 }, { unique: true });
 questionSchema.index({ taskType: 1 });
 questionSchema.index({ category: 1 });
-
-// ── Utility ─────────────────────────────────────────────────────────
-
-/**
- * Computes a deterministic SHA-1 hash of the question text.
- * Used for deduplication: identical questions produce the same hash.
- */
-export function computeTextHash(text: string): string {
-  return createHash("sha1").update(text.trim().toLowerCase()).digest("hex");
-}
 
 // ── Exports ─────────────────────────────────────────────────────────
 export type IQuestion = InferSchemaType<typeof questionSchema>;
