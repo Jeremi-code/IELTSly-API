@@ -1,12 +1,18 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/express.types.js";
 import { Essay, EssayStatus } from "../models/essay.model.js";
-import { Question, computeTextHash } from "../models/question.model.js";
+import { Question } from "../models/question.model.js";
 import { evaluateEssay as runEvaluation } from "../services/evaluation.service.js";
 import { getDecryptedCredentials } from "../services/credential.service.js";
 import { wordCount } from "../utils/text.utils.js";
 
-// ── POST /api/essays ────────────────────────────────────────────────
+/**
+ * Creates a new essay attempt or draft.
+ * @route POST /api/essays
+ * @param {AuthRequest} req Express request containing essay details
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function createEssay(
   req: AuthRequest,
   res: Response,
@@ -63,7 +69,13 @@ export async function createEssay(
   }
 }
 
-// ── GET /api/essays ─────────────────────────────────────────────────
+/**
+ * Lists user essays with pagination, filtering, and sorting options.
+ * @route GET /api/essays
+ * @param {AuthRequest} req Express request containing filter queries
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function listEssays(
   req: AuthRequest,
   res: Response,
@@ -93,7 +105,6 @@ export async function listEssays(
     if (status && status !== "all") filter.status = status;
     if (mode && mode !== "all") filter.mode = mode;
 
-    // Band score filtering
     if (scoreFilter === "band7_plus") {
       filter["evaluation.overallBand"] = { $gte: 7.0 };
     } else if (scoreFilter === "band6_to_7") {
@@ -107,7 +118,6 @@ export async function listEssays(
       filter["evaluation.overallBand"] = bandRange;
     }
 
-    // Search query filtering across prompt, category, and feedback
     if (search && typeof search === "string" && search.trim()) {
       const queryStr = search.trim();
       const searchRegex = { $regex: queryStr, $options: "i" };
@@ -118,7 +128,6 @@ export async function listEssays(
       ];
     }
 
-    // Sorting definition
     let sortObj: Record<string, 1 | -1> = { createdAt: -1 };
     if (sortBy === "oldest") {
       sortObj = { createdAt: 1 };
@@ -147,7 +156,13 @@ export async function listEssays(
   }
 }
 
-// ── GET /api/essays/:id ─────────────────────────────────────────────
+/**
+ * Retrieves a single essay by ID for the authenticated user.
+ * @route GET /api/essays/:id
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getEssay(
   req: AuthRequest,
   res: Response,
@@ -169,7 +184,13 @@ export async function getEssay(
   }
 }
 
-// ── PUT /api/essays/:id ─────────────────────────────────────────────
+/**
+ * Updates an in-progress essay draft.
+ * @route PUT /api/essays/:id
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function updateEssay(
   req: AuthRequest,
   res: Response,
@@ -209,7 +230,13 @@ export async function updateEssay(
   }
 }
 
-// ── POST /api/essays/:id/evaluate ───────────────────────────────────
+/**
+ * Triggers AI evaluation for an essay response.
+ * @route POST /api/essays/:id/evaluate
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function evaluateEssay(
   req: AuthRequest,
   res: Response,
@@ -234,8 +261,6 @@ export async function evaluateEssay(
     }
 
     const userId = req.user!.id;
-
-    // User brings their own AI key (stored encrypted in DB or provided in request headers)
     let credentials = await getDecryptedCredentials(userId);
 
     if (!credentials) {
@@ -296,7 +321,13 @@ export async function evaluateEssay(
   }
 }
 
-// ── POST /api/essays/:id/rework ─────────────────────────────────────
+/**
+ * Creates a rework version of a previously evaluated essay.
+ * @route POST /api/essays/:id/rework
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function reworkEssay(
   req: AuthRequest,
   res: Response,
@@ -315,7 +346,6 @@ export async function reworkEssay(
 
     const { response, durationSec } = req.body;
 
-    // Increment timesUsed on the question if it came from the bank.
     if (source.questionId) {
       await Question.findByIdAndUpdate(source.questionId, {
         $inc: { timesUsed: 1 },

@@ -8,6 +8,13 @@ import {
 import { UserTarget } from "../models/user-target.model.js";
 import type { AIProvider } from "../types/ai.types.js";
 
+/**
+ * Gets AI credential status for the authenticated user.
+ * @route GET /api/users/ai-credentials
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getAICredentials(
   req: AuthRequest,
   res: Response,
@@ -22,6 +29,13 @@ export async function getAICredentials(
   }
 }
 
+/**
+ * Saves or updates encrypted AI credentials.
+ * @route POST /api/users/ai-credentials
+ * @param {AuthRequest} req Express request containing provider & API key
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function saveAICredentials(
   req: AuthRequest,
   res: Response,
@@ -49,7 +63,6 @@ export async function saveAICredentials(
       return;
     }
 
-    // Provider-specific format validation
     const trimmedKey = apiKey.trim();
     if (provider === "gemini" && !/^AIza[0-9A-Za-z_-]{20,}$/.test(trimmedKey)) {
       res.status(400).json({
@@ -78,6 +91,13 @@ export async function saveAICredentials(
   }
 }
 
+/**
+ * Deletes AI API credentials for the user.
+ * @route DELETE /api/users/ai-credentials
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function deleteAICredentials(
   req: AuthRequest,
   res: Response,
@@ -92,6 +112,13 @@ export async function deleteAICredentials(
   }
 }
 
+/**
+ * Retrieves the exam target configuration for the user.
+ * @route GET /api/users/target
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getUserTarget(
   req: AuthRequest,
   res: Response,
@@ -119,6 +146,13 @@ export async function getUserTarget(
   }
 }
 
+/**
+ * Saves or updates user exam target configuration.
+ * @route PUT /api/users/target
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function saveUserTarget(
   req: AuthRequest,
   res: Response,
@@ -172,6 +206,13 @@ export async function saveUserTarget(
   }
 }
 
+/**
+ * Clears user target exam date configuration.
+ * @route DELETE /api/users/target
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function deleteUserTarget(
   req: AuthRequest,
   res: Response,
@@ -185,4 +226,3 @@ export async function deleteUserTarget(
     next(err);
   }
 }
-

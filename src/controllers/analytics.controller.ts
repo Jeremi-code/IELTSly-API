@@ -11,10 +11,15 @@ import type {
   CriteriaAverages,
   TrendPoint,
   Improvement,
-  ActivitySummary,
 } from "../types/analytics.types.js";
 
-// ── GET /api/analytics ──────────────────────────────────────────────
+/**
+ * Computes performance analytics, criteria averages, trend data, and study streak stats.
+ * @route GET /api/analytics
+ * @param {AuthRequest} req Express request object containing user context
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
+ */
 export async function getAnalytics(
   req: AuthRequest,
   res: Response,
@@ -23,7 +28,6 @@ export async function getAnalytics(
   try {
     const userId = req.user!.id;
 
-    // ── Aggregation: core stats ───────────────────────────────────
     const [statsResult] = await Essay.aggregate([
       { $match: { user: userId } },
       {
@@ -62,7 +66,6 @@ export async function getAnalytics(
       },
     ]);
 
-    // ── Word count and duration averages ──────────────────────────
     const [performanceResult] = await Essay.aggregate([
       { $match: { user: userId, status: EssayStatus.Evaluated } },
       {
@@ -90,7 +93,6 @@ export async function getAnalytics(
         : 0,
     };
 
-    // ── Per-task averages ─────────────────────────────────────────
     const taskAvgs = await Essay.aggregate([
       { $match: { user: userId, status: EssayStatus.Evaluated } },
       { $group: { _id: "$type", avg: { $avg: "$evaluation.overallBand" } } },
@@ -100,7 +102,6 @@ export async function getAnalytics(
       if (row._id === "task2") stats.task2Average = round1dp(row.avg);
     }
 
-    // ── Criteria averages ─────────────────────────────────────────
     const [criteriaResult] = await Essay.aggregate([
       { $match: { user: userId, status: EssayStatus.Evaluated } },
       {
@@ -120,7 +121,6 @@ export async function getAnalytics(
       gra: round1dp(criteriaResult?.gra ?? 0),
     };
 
-    // ── Trend: last 10 evaluated essays (oldest → newest) ────────
     const trendDocs = await Essay.find({
       user: userId,
       status: EssayStatus.Evaluated,
@@ -137,7 +137,6 @@ export async function getAnalytics(
       type: doc.type,
     }));
 
-    // ── Recent examiner tips (collected from the last 6 evaluations) ──
     const recentEvaluations = await Essay.find({
       user: userId,
       status: EssayStatus.Evaluated,
@@ -163,7 +162,6 @@ export async function getAnalytics(
       }
     }
 
-    // ── Rework improvements ───────────────────────────────────────
     const reworks = await Essay.find({
       user: userId,
       reworkOf: { $exists: true, $ne: null },
@@ -195,7 +193,6 @@ export async function getAnalytics(
       }
     }
 
-    // ── Daily activity & streak aggregation ───────────────────────
     const dailyActivitiesRaw = await Essay.aggregate([
       { $match: { user: userId } },
       {
@@ -262,8 +259,6 @@ export async function getAnalytics(
     }
 
     const activitySummary = calculateStreakAndStats(activitiesMap);
-
-    // ── Diagnostic coach comment ───────────────────────────────────
     const dailyComment = buildDiagnosticComment(stats, criteriaAverages);
 
     res.json({
@@ -280,7 +275,13 @@ export async function getAnalytics(
   }
 }
 
-// ── GET /api/analytics/activity ─────────────────────────────────────
+/**
+ * Returns user study activity matrix and streak breakdown.
+ * @route GET /api/analytics/activity
+ * @param {AuthRequest} req Express request object
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
+ */
 export async function getActivitySummary(
   req: AuthRequest,
   res: Response,

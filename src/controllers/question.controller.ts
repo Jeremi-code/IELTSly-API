@@ -1,8 +1,15 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/express.types.js";
-import { Question, computeTextHash } from "../models/question.model.js";
+import { Question } from "../models/question.model.js";
+import { computeTextHash } from "../utils/text.utils.js";
 
-// ── GET /api/questions ──────────────────────────────────────────────
+/**
+ * Lists question prompts with search, category filtering, and pagination.
+ * @route GET /api/questions
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function listQuestions(
   req: AuthRequest,
   res: Response,
@@ -41,7 +48,13 @@ export async function listQuestions(
   }
 }
 
-// ── GET /api/questions/categories ───────────────────────────────────
+/**
+ * Returns distinct question categories for a given task type.
+ * @route GET /api/questions/categories
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getCategories(
   req: AuthRequest,
   res: Response,
@@ -60,7 +73,13 @@ export async function getCategories(
   }
 }
 
-// ── GET /api/questions/random ───────────────────────────────────────
+/**
+ * Returns a random question prompt matching specified criteria.
+ * @route GET /api/questions/random
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getRandomQuestion(
   req: AuthRequest,
   res: Response,
@@ -93,7 +112,13 @@ export async function getRandomQuestion(
   }
 }
 
-// ── GET /api/questions/:id ──────────────────────────────────────────
+/**
+ * Gets a specific question prompt by ID.
+ * @route GET /api/questions/:id
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function getQuestion(
   req: AuthRequest,
   res: Response,
@@ -111,7 +136,13 @@ export async function getQuestion(
   }
 }
 
-// ── POST /api/questions ─────────────────────────────────────────────
+/**
+ * Creates a new question prompt in the bank with hash-based deduplication.
+ * @route POST /api/questions
+ * @param {AuthRequest} req Express request
+ * @param {Response} res Express response
+ * @param {NextFunction} next Express next function
+ */
 export async function createQuestion(
   req: AuthRequest,
   res: Response,
@@ -129,11 +160,8 @@ export async function createQuestion(
 
     const textHash = computeTextHash(text);
 
-    // Check for existing duplicate.
     const existing = await Question.findOne({ textHash }).lean();
     if (existing) {
-      // Return the existing doc without incrementing timesUsed.
-      // timesUsed is only incremented by essay creation.
       res.status(200).json(existing);
       return;
     }

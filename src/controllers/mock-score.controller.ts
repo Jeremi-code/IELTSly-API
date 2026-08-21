@@ -4,8 +4,11 @@ import MockScore, { IELTSModule, IMockScore } from "../models/mock-score.model.j
 import { calculateOverallBand, rawToBand } from "../utils/mock-score.utils.js";
 
 /**
- * GET /api/mock-scores
- * Query params: module? (listening|reading|writing|speaking)
+ * Fetches user mock scores with optional module filtering.
+ * @route GET /api/mock-scores
+ * @param {AuthRequest} req Express request object containing authenticated user credentials
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
  */
 export async function getMockScores(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -25,8 +28,11 @@ export async function getMockScores(req: AuthRequest, res: Response, next: NextF
 }
 
 /**
- * POST /api/mock-scores
- * Create or update a mock test score
+ * Creates or updates a mock test score log.
+ * @route POST /api/mock-scores
+ * @param {AuthRequest} req Express request object containing score payload
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
  */
 export async function saveMockScore(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -40,7 +46,6 @@ export async function saveMockScore(req: AuthRequest, res: Response, next: NextF
 
     let finalScore = Number(score);
 
-    // If rawCount is provided for listening or reading and score isn't valid, calculate band score
     if ((module === "listening" || module === "reading") && rawCount !== undefined && rawCount !== null && (isNaN(finalScore) || finalScore === 0)) {
       finalScore = rawToBand(Number(rawCount), module);
     }
@@ -53,7 +58,7 @@ export async function saveMockScore(req: AuthRequest, res: Response, next: NextF
     const scoreData = {
       userId,
       module,
-      score: Math.round(finalScore * 2) / 2, // Round to nearest 0.5
+      score: Math.round(finalScore * 2) / 2,
       rawCount: rawCount !== undefined && rawCount !== null && rawCount !== "" ? Number(rawCount) : undefined,
       totalQuestions: totalQuestions ? Number(totalQuestions) : 40,
       source: source && String(source).trim() ? String(source).trim() : "Practice Test",
@@ -80,7 +85,11 @@ export async function saveMockScore(req: AuthRequest, res: Response, next: NextF
 }
 
 /**
- * DELETE /api/mock-scores/:id
+ * Deletes a logged mock test score entry.
+ * @route DELETE /api/mock-scores/:id
+ * @param {AuthRequest} req Express request object containing score ID parameter
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
  */
 export async function deleteMockScore(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -100,8 +109,11 @@ export async function deleteMockScore(req: AuthRequest, res: Response, next: Nex
 }
 
 /**
- * GET /api/mock-scores/summary
- * Computes latest & average scores per module, plus official overall band.
+ * Computes latest & average scores per module alongside official overall IELTS Band score.
+ * @route GET /api/mock-scores/summary
+ * @param {AuthRequest} req Express request object
+ * @param {Response} res Express response object
+ * @param {NextFunction} next Express next function
  */
 export async function getMockSummary(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -128,7 +140,6 @@ export async function getMockSummary(req: AuthRequest, res: Response, next: Next
       };
     }
 
-    // Compute latest overall band if all 4 modules have at least 1 test
     const latestL = summary.listening.latest;
     const latestR = summary.reading.latest;
     const latestW = summary.writing.latest;
