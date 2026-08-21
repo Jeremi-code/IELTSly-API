@@ -9,6 +9,7 @@ import questionRoutes from "./routes/question.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import scrapeRoutes from "./routes/scrape.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import mockScoreRoutes from "./routes/mock-score.route.js";
 
 export const app: Application = express();
 
@@ -36,6 +37,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/scrape", scrapeRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/mock-scores", mockScoreRoutes);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
