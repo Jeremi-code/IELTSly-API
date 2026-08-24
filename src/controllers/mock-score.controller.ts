@@ -37,7 +37,7 @@ export async function getMockScores(req: AuthRequest, res: Response, next: NextF
 export async function saveMockScore(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;
-    const { id, module, score, rawCount, totalQuestions, source, testDate, notes } = req.body;
+    const { id, module, score, rawCount, totalQuestions, source, testDate, notes, resultUrl } = req.body;
 
     if (!module || !["listening", "reading", "writing", "speaking"].includes(module)) {
       res.status(400).json({ message: "Valid module is required (listening, reading, writing, speaking)" });
@@ -64,6 +64,7 @@ export async function saveMockScore(req: AuthRequest, res: Response, next: NextF
       source: source && String(source).trim() ? String(source).trim() : "Practice Test",
       testDate: testDate ? new Date(testDate) : new Date(),
       notes: notes ? String(notes).trim() : undefined,
+      resultUrl: resultUrl ? String(resultUrl).trim() : undefined,
     };
 
     if (id) {

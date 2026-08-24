@@ -11,6 +11,7 @@ export interface IMockScore extends Document {
   source: string;
   testDate: Date;
   notes?: string;
+  resultUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const mockScoreSchema = new Schema<IMockScore>(
     source: { type: String, required: true, trim: true, default: "Practice Test" },
     testDate: { type: Date, default: Date.now },
     notes: { type: String, trim: true },
+    resultUrl: { type: String, trim: true },
   },
   {
     timestamps: true,
