@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ieltsly-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://ieltsly.netlify.app
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
