@@ -9,11 +9,13 @@ const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/ieltsly";
 const client = new MongoClient(mongoUri);
 const db = client.db();
 
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+
 export const auth = betterAuth({
   basePath: "/api/auth",
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
   database: mongodbAdapter(db, { client }),
-  trustedOrigins: [process.env.FRONTEND_URL || "http://localhost:3000"],
+  trustedOrigins: [frontendUrl],
   emailAndPassword: {
     enabled: true,
   },

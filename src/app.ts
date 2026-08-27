@@ -11,12 +11,14 @@ import scrapeRoutes from "./routes/scrape.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import mockScoreRoutes from "./routes/mock-score.route.js";
 
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+
 export const app: Application = express();
 
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: frontendUrl,
     credentials: true,
   }),
 );
