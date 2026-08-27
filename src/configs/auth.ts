@@ -27,6 +27,12 @@ export const auth = betterAuth({
     crossSubdomainCookies: {
       enabled: false,
     },
+    defaultCookieAttributes: isProduction
+      ? {
+          sameSite: "none" as const,
+          secure: true,
+        }
+      : {},
   },
   emailAndPassword: {
     enabled: true,
