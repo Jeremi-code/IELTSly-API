@@ -14,6 +14,7 @@ client.connect().catch((err) => {
 
 const db = client.db();
 
+const isProduction = process.env.NODE_ENV === "production";
 const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export const auth = betterAuth({
@@ -21,6 +22,12 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
   database: mongodbAdapter(db, { client }),
   trustedOrigins: [frontendUrl],
+  advanced: {
+    useSecureCookies: isProduction,
+    crossSubdomainCookies: {
+      enabled: false,
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
@@ -33,7 +40,7 @@ export const auth = betterAuth({
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes
+      maxAge: 5 * 60,
     },
   },
 });
