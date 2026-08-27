@@ -12,9 +12,9 @@ services:
       - key: MONGO_URI
         sync: false
       - key: BETTER_AUTH_SECRET
-        generateValue: true
+        sync: false
       - key: ENCRYPTION_KEY
-        generateValue: true
+        sync: false
       - key: BETTER_AUTH_URL
         sync: false
       - key: FRONTEND_URL
