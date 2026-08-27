@@ -15,8 +15,10 @@ services:
         generateValue: true
       - key: ENCRYPTION_KEY
         generateValue: true
+      - key: BETTER_AUTH_URL
+        sync: false
       - key: FRONTEND_URL
-        value: https://ieltsly.netlify.app
+        sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
