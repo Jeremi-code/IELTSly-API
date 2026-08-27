@@ -7,6 +7,11 @@ dotenv.config();
 
 const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/ieltsly";
 const client = new MongoClient(mongoUri);
+
+client.connect().catch((err) => {
+  console.error("Failed to connect MongoDB client for Better Auth:", err);
+});
+
 const db = client.db();
 
 const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
