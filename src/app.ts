@@ -10,6 +10,7 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import scrapeRoutes from "./routes/scrape.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import mockScoreRoutes from "./routes/mock-score.route.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
 
@@ -37,6 +38,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/api/essays", essayRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/scrape", scrapeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/mock-scores", mockScoreRoutes);
