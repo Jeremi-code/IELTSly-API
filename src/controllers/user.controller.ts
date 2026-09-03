@@ -114,6 +114,7 @@ export async function deleteAICredentials(
 
 /**
  * Retrieves the exam target configuration for the user.
+ * Uses lightweight lean query for fast performance.
  * @route GET /api/users/target
  * @param {AuthRequest} req Express request
  * @param {Response} res Express response
@@ -126,7 +127,7 @@ export async function getUserTarget(
 ): Promise<void> {
   try {
     const userId = req.user!.id;
-    const target = await UserTarget.findOne({ userId });
+    const target = await UserTarget.findOne({ userId }).lean();
     if (!target) {
       res.json({
         examDate: null,
@@ -136,7 +137,7 @@ export async function getUserTarget(
       return;
     }
     res.json({
-      examDate: target.examDate ? target.examDate.toISOString() : null,
+      examDate: target.examDate ? new Date(target.examDate).toISOString() : null,
       targetBand: target.targetBand ?? 7.5,
       examType: target.examType ?? "academic",
       updatedAt: target.updatedAt,
@@ -193,10 +194,10 @@ export async function saveUserTarget(
         examType: type,
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
+    ).lean();
 
     res.json({
-      examDate: target.examDate ? target.examDate.toISOString() : null,
+      examDate: target.examDate ? new Date(target.examDate).toISOString() : null,
       targetBand: target.targetBand ?? 7.5,
       examType: target.examType ?? "academic",
       updatedAt: target.updatedAt,

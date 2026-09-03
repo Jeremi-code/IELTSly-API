@@ -15,19 +15,17 @@ export function round1dp(n: number): number {
 
 /**
  * Builds a diagnostic study guidance comment based on criteria performance.
+ * Returns null if no evaluated essays exist.
  * @param {Pick<AnalyticsStats, "averageBand" | "evaluatedCount">} stats Analytics stats
  * @param {CriteriaAverages} [criteriaAverages] Per-criteria average band scores
- * @returns {DailyComment} Diagnostic comment object
+ * @returns {DailyComment | null} Diagnostic comment object or null if zero essays
  */
 export function buildDiagnosticComment(
   stats: Pick<AnalyticsStats, "averageBand" | "evaluatedCount">,
   criteriaAverages?: CriteriaAverages,
-): DailyComment {
+): DailyComment | null {
   if (stats.evaluatedCount === 0) {
-    return {
-      text: "Welcome to IELTSly! Submit your first essay to unlock personalized 4-pillar diagnostics and band tracking.",
-      tone: "neutral",
-    };
+    return null;
   }
 
   if (criteriaAverages) {
