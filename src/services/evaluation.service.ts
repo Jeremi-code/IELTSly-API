@@ -42,32 +42,29 @@ function resolveModel({ apiKey, provider, model }: AICredentials) {
 function buildPrompt(input: EvaluateInput): string {
   const taskLabel = input.type === "task1" ? "Task 1" : "Task 2";
   const isTask1 = input.type === "task1";
-  const isPractice = input.mode === "practice";
 
   let wordCountGuidance = "";
 
-  if (isPractice) {
-    if (isTask1) {
-      wordCountGuidance = `
-## Word Count Rules (PRACTICE MODE ONLY):
-- **Optimal Range**: 160 – 180 words.
+  if (isTask1) {
+    wordCountGuidance = `
+## Strict Word Count & Conciseness Rules:
+- **Optimal Target Range**: 160 – 180 words.
 - **Under 150 words**: Penalize Task Achievement (TA) for being under-length.
 - **Over 180 words** (Current response: ${input.wordCount} words):
-  - In practice mode, writing over 180 words is considered POOR practice due to verbosity and inefficient communication.
-  - Because ${input.wordCount} > 180, you MUST penalize Task Achievement (TA) and Coherence & Cohesion (CC).
-  - Do NOT award a high Band 8 or 9 if the response is overly verbose (${input.wordCount} words).
-  - In your feedback and improvement tips, explicitly state that writing ${input.wordCount} words is poor practice, and advise the student to express their ideas in simpler and fewer words within 160–180 words.`;
-    } else {
-      wordCountGuidance = `
-## Word Count Rules (PRACTICE MODE ONLY):
-- **Optimal Range**: 260 – 280 words.
+  - Writing over 180 words is considered POOR practice due to verbosity, fluff, and inefficient data description.
+  - If ${input.wordCount} > 180, you MUST penalize Task Achievement (TA) and Coherence & Cohesion (CC).
+  - Do NOT award a Band 8 or 9 if the response is excessively verbose (${input.wordCount} words).
+  - In feedback and improvement tips, explicitly state that ${input.wordCount} words is too long, and advise the student to express key details using simpler, concise phrasing within 160–180 words.`;
+  } else {
+    wordCountGuidance = `
+## Strict Word Count & Conciseness Rules:
+- **Optimal Target Range**: 260 – 280 words.
 - **Under 250 words**: Penalize Task Achievement (TA) for being under-length.
 - **Over 280 words** (Current response: ${input.wordCount} words):
-  - In practice mode, writing over 280 words (e.g. 300+ words) is considered POOR practice because it leads to repetition, rambling, and loss of focus.
-  - Because ${input.wordCount} > 280, you MUST penalize Task Achievement (TA) and Coherence & Cohesion (CC).
+  - Writing over 280 words (e.g. 300+ words) is considered POOR practice because it leads to repetition, rambling, and loss of conciseness.
+  - If ${input.wordCount} > 280, you MUST penalize Task Achievement (TA) and Coherence & Cohesion (CC).
   - Do NOT award an overall score of Band 8 or 9 for an excessively long essay (${input.wordCount} words).
-  - In your feedback and improvement tips, explicitly tell the user that writing ${input.wordCount} words is poor practice, and advise them to express their points using simpler structures and fewer words within the optimal 260–280 word range.`;
-    }
+  - In feedback and improvement tips, explicitly state that writing ${input.wordCount} words is poor practice, and advise the user to express their arguments using simpler, cleaner language in fewer words within the optimal 260–280 word range.`;
   }
 
   return `You are an expert IELTS examiner evaluating a ${taskLabel} essay (${input.mode.toUpperCase()} MODE).
@@ -82,7 +79,7 @@ ${wordCountGuidance}
 ## Evaluation Instructions
 Score each criterion on the official IELTS band scale (0–9, half-bands allowed like 6.5):
 
-1. **TA (Task Achievement)** — Address all prompt requirements concisely. ${isPractice ? "(Apply practice mode word count penalties if word count is outside optimal limits)." : ""}
+1. **TA (Task Achievement)** — Address all prompt requirements concisely within optimal word count limits.
 2. **CC (Coherence & Cohesion)** — Paragraphing, logical progression, cohesive devices without verbosity.
 3. **LR (Lexical Resource)** — Range and precision of vocabulary, natural collocation, no over-repetition.
 4. **GRA (Grammatical Range & Accuracy)** — Range and accuracy of sentence structures, punctuation.
@@ -91,7 +88,7 @@ Score each criterion on the official IELTS band scale (0–9, half-bands allowed
 
 ${isTask1 ? "For Task 1, emphasize accurate data description, key trend identification, and a clear overview." : ""}
 
-Provide 2–4 sentences of encouraging but specific feedback and 2–4 concrete, actionable improvement tips tied to the weakest criteria${isPractice && ((isTask1 && input.wordCount > 180) || (!isTask1 && input.wordCount > 280)) ? " (including explicit advice to write simpler and in fewer words to stay within optimal word count limits)" : ""}.`;
+Provide 2–4 sentences of encouraging but specific feedback and 2–4 concrete, actionable improvement tips tied to the weakest criteria${(isTask1 && input.wordCount > 180) || (!isTask1 && input.wordCount > 280) ? " (including explicit advice to write simpler and in fewer words to stay within optimal word count limits)" : ""}.`;
 }
 
 /**
